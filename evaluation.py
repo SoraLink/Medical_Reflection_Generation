@@ -39,7 +39,7 @@ def evaluate(args):
     loader = DataLoader(test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
     for batch_idx, (real_pils, prompts) in enumerate(loader):
         gen_pils = model(
-            prompt=prompts,
+            prompts=prompts,
             num_inference_steps=100
         )
         real_t = torch.stack([to_tensor(img) for img in real_pils]).to(args.device)
