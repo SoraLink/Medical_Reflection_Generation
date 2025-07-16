@@ -41,7 +41,7 @@ def evaluate(args):
         gen_pils = model(
             prompt=prompts,
             num_inference_steps=100
-        ).images
+        )
         real_t = torch.stack([to_tensor(img) for img in real_pils]).to(args.device)
         gen_t = torch.stack([to_tensor(img) for img in gen_pils]).to(args.device)
         metrics.add_images(real_t, gen_t)

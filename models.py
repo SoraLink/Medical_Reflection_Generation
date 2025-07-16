@@ -24,11 +24,11 @@ class MINIM:
         ).to(device)
 
     def __call__(self, prompts, num_inference_steps):
-        image = self.pipe(
+        images = self.pipe(
             prompt=prompts,
             num_inference_steps=num_inference_steps
-        ).images[0]
-        return image
+        ).images
+        return images
 
 
 def build_model(modal, model_path, model, device):
