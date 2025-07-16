@@ -4,6 +4,7 @@ import torch
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
+from tqdm import tqdm
 from transformers import CLIPTokenizer
 
 from metrics import Metrics
@@ -43,7 +44,7 @@ def evaluate(args):
                 prompts.append(prompt)
         return real_images, prompts
     loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn)
-    for batch_idx, (real_pils, prompts) in enumerate(loader):
+    for real_pils, prompts in tqdm(loader):
         gen_pils = model(
             prompts=prompts,
             num_inference_steps=100
