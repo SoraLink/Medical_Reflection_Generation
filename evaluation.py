@@ -4,6 +4,7 @@ import torch
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
+from transformers import CLIPTokenizer
 
 from metrics import Metrics
 from models import build_model
@@ -18,6 +19,8 @@ PROMPT_FIELDS = {
     "ChestCT": []
 }
 
+tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+
 def evaluate(args):
     model = build_model(args.modality, args.weight_path, args.model, args.device)
     dataset = load_dataset(DATASETS[args.modality], split='train')
@@ -28,13 +31,16 @@ def evaluate(args):
     to_tensor = ToTensor()
 
     def collate_fn(batch):
-        real_images = [item["image"].convert("RGB") for item in batch]
+        real_images = []
         prompts = []
         for item in batch:
             prompt = f'''{args.modality}:'''
             for field in PROMPT_FIELDS[args.modality]:
                 prompt += f'''{item[field]}\n'''
-            prompts.append(prompt)
+            tokenized = tokenizer(prompt, truncation=False)
+            if len(tokenized["input_ids"]) <= 77:
+                real_images.append(item["image"].convert("RGB"))
+                prompts.append(prompt)
         return real_images, prompts
     loader = DataLoader(test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
     for batch_idx, (real_pils, prompts) in enumerate(loader):

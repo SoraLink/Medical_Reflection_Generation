@@ -19,6 +19,12 @@ class Metrics:
         self.model = models.inception_v3(pretrained=True, transform_input=False).to(device)
         self.model.eval()
         self.up = transforms.Resize((299, 299))
+        self.feature = None
+
+        def hook_fn(module, input, output):
+            self.feature = output
+
+        self.model.Mixed_7c.register_forward_hook(hook_fn)
 
 
     def add_images(self, real_imgs, pred_imgs):
@@ -37,7 +43,7 @@ class Metrics:
             batch = self.up(batch)
             pred = self.model(batch)
             # use pool3 features instead of logits
-            feat = self.model.Mixed_7c(batch)  # adjust if needed
+            feat = self.feature
             feat = F.adaptive_avg_pool2d(feat, (1, 1)).squeeze(-1).squeeze(-1)
             return feat.cpu().numpy(), pred
         # return np.concatenate(acts, axis=0)
