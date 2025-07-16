@@ -20,7 +20,8 @@ PROMPT_FIELDS = {
 
 def evaluate(args):
     model = build_model(args.modality, args.weight_path, args.model, args.device)
-    dataset = load_dataset(DATASETS[args.modality], split='test')
+    dataset = load_dataset(DATASETS[args.modality], split='train')
+    print(f"Train dataset size: {len(dataset)} samples")
     metrics = Metrics(args.device)
     to_tensor = ToTensor()
 
