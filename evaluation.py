@@ -33,8 +33,6 @@ def evaluate(args):
         for item in batch:
             prompt = f'''{args.modality}:'''
             for field in PROMPT_FIELDS[args.modality]:
-                print(item[field])
-                print()
                 prompt += f'''{item[field]}\n'''
             prompts.append(prompt)
         return real_images, prompts

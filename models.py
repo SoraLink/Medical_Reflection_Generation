@@ -23,10 +23,9 @@ class MINIM:
             safety_checker=None,
         ).to(device)
 
-    def __call__(self, prompt, num_inference_steps):
-        input_to_model = f'''{self.modal}:{prompt}'''
+    def __call__(self, prompts, num_inference_steps):
         image = self.pipe(
-            prompt=input_to_model,
+            prompt=prompts,
             num_inference_steps=num_inference_steps
         ).images[0]
         return image
