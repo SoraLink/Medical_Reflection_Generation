@@ -25,7 +25,8 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 def evaluate(args):
     model = build_model(args.modality, args.weight_path, args.model, args.device)
     dataset = load_dataset(DATASETS[args.modality], split='train')
-    split_datasets = dataset.train_test_split(test_size=0.2, seed=42)
+    print(len(dataset))
+    split_datasets = dataset.train_test_split(test_size=0.1, seed=42)
     test_dataset = split_datasets["test"]
 
     metrics = Metrics(args.device)
