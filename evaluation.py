@@ -14,7 +14,7 @@ DATASETS = {
 }
 
 PROMPT_FIELDS = {
-    "CXR": ["findings", "impression"],
+    "CXR": ["findings"],
     "ChestCT": []
 }
 
@@ -31,14 +31,14 @@ def evaluate(args):
         real_images = [item["image"].convert("RGB") for item in batch]
         prompts = []
         for item in batch:
-            prompt = ""
+            prompt = f'''{args.modality}:'''
             for field in PROMPT_FIELDS[args.modality]:
-                prompt += f'''{field}: {item[field]}\n'''
+                prompt += f'''{item[field]}\n'''
             prompts.append(prompt)
         return real_images, prompts
     loader = DataLoader(test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
     for batch_idx, (real_pils, prompts) in enumerate(loader):
-        gen_pils  = model(
+        gen_pils = model(
             prompt=prompts,
             num_inference_steps=100
         ).images
