@@ -21,7 +21,9 @@ PROMPT_FIELDS = {
 def evaluate(args):
     model = build_model(args.modality, args.weight_path, args.model, args.device)
     dataset = load_dataset(DATASETS[args.modality], split='train')
-    print(f"Train dataset size: {len(dataset)} samples")
+    split_datasets = dataset.train_test_split(test_size=0.2, seed=42)
+    test_dataset = split_datasets["test"]
+
     metrics = Metrics(args.device)
     to_tensor = ToTensor()
 
@@ -34,7 +36,7 @@ def evaluate(args):
                 prompt += f'''{field}: {item[field]}\n'''
             prompts.append(prompt)
         return real_images, prompts
-    loader = DataLoader(dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
+    loader = DataLoader(test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
     for batch_idx, (real_pils, prompts) in enumerate(loader):
         gen_pils  = model(
             prompt=prompts,
