@@ -42,7 +42,7 @@ def evaluate(args):
                 real_images.append(item["image"].convert("RGB"))
                 prompts.append(prompt)
         return real_images, prompts
-    loader = DataLoader(test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn)
+    loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn)
     for batch_idx, (real_pils, prompts) in enumerate(loader):
         gen_pils = model(
             prompts=prompts,
