@@ -753,7 +753,7 @@ def main():
     def preprocess_train(examples):
         from PIL import Image
 
-        images = [Image.open(image_path).convert("RGB") for image_path in examples[image_column]]
+        images = [img.convert("RGB") for img in examples[image_column]]
         examples["pixel_values"] = [train_transforms(image) for image in images]
         examples["input_ids"] = tokenize_captions(examples)
         return examples
