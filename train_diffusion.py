@@ -698,6 +698,7 @@ def main():
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
+    dataset = dataset.train_test_split(test_size=0.1, seed=42)
     column_names = dataset["train"].column_names
     print(dataset)
     # 6. Get the column names for input/target.
