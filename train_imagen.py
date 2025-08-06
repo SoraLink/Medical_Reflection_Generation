@@ -72,7 +72,7 @@ def train(
             image_label='image',
             text_label='findings',
             name="google/t5-v1_1-large",
-            channels='L',
+            channels='RGB',
             url_label=None
         )
     )
