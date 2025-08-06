@@ -102,6 +102,6 @@ unet_epochs = {
     3: 150
 }
 
-for unet_number, epoch in unet_epochs:
+for unet_number, epoch in unet_epochs.items():
     print('Training for unet number {}'.format(unet_number))
     train(unet_number, epoch)
