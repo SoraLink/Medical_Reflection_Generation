@@ -67,7 +67,7 @@ def train(
 
     trainer.add_train_dataset(
         dataset['train'],
-        batch_size=32,
+        batch_size=16,
         collate_fn=Collator(
             image_size=512,
             image_label='image',
