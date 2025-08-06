@@ -52,6 +52,7 @@ def train(
     dataset_length = len(dataset['train'])
     trainer = ImagenTrainer(
         imagen,
+        channels=1,
         use_ema=True,
         lr=1e-4,
         warmup_steps=500,
@@ -72,7 +73,7 @@ def train(
             image_label='image',
             text_label='findings',
             name="google/t5-v1_1-large",
-            channels='RGB',
+            channels='L',
             url_label=None
         )
     )
