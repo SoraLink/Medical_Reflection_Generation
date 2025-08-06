@@ -1,6 +1,15 @@
+import copy
 import os.path
+import random
 
-from diffusers import StableDiffusionPipeline, UNet2DConditionModel
+import accelerate
+import torch
+from accelerate import Accelerator
+from datasets import load_dataset
+from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler
+import torch.nn.functional as F
+from packaging import version
+from tqdm import tqdm
 
 
 class MINIM:
@@ -37,3 +46,26 @@ def build_model(modal, model_path, model, device):
     else:
         raise NotImplementedError
 
+class Diffusion:
+
+    def __init__(self,  model_path, device):
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            model_path,
+            torch_dtype=torch.float32
+        ).to(device)
+
+    def __call__(self, prompts, num_inference_steps):
+        images = self.pipe(
+            prompt=prompts,
+            num_inference_steps=num_inference_steps
+        ).images
+        return images
+
+dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset", split='train')
+sample = random.choice(dataset)
+image = sample['image']
+prompt = sample['findings']
+diffusion = Diffusion('./output', 'cuda')
+pred = diffusion([prompt], num_inference_steps=500)
+image.save("original.png")
+pred[0].save("pred.png")
