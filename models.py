@@ -65,7 +65,7 @@ dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset", split='train')
 sample = random.choice(dataset)
 image = sample['image']
 prompt = sample['findings']
-diffusion = Diffusion('./output', 'cuda')
+diffusion = Diffusion('/data/sora/Medical_Reflection_Generation/checkpoints/MINIM/model', 'cuda')
 pred = diffusion([prompt], num_inference_steps=500)
 image.save("original.png")
 pred[0].save("pred.png")
