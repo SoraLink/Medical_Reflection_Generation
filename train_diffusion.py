@@ -698,8 +698,8 @@ def main():
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
-    train_dataset  = dataset["train"].train_test_split(test_size=0.1, seed=42)
-    column_names = train_dataset.column_names
+    dataset  = dataset["train"].train_test_split(test_size=0.1, seed=42)
+    column_names = dataset["train"].column_names
     print(dataset)
     # 6. Get the column names for input/target.
     dataset_columns = DATASET_NAME_MAPPING.get(args.dataset_name, None)
@@ -761,9 +761,9 @@ def main():
 
     with accelerator.main_process_first():
         if args.max_train_samples is not None:
-            train_dataset = train_dataset.shuffle(seed=args.seed).select(range(args.max_train_samples))
+            dataset["train"] = dataset["train"].shuffle(seed=args.seed).select(range(args.max_train_samples))
         # Set the training transforms
-        train_dataset = train_dataset.with_transform(preprocess_train)
+        train_dataset = dataset["train"].with_transform(preprocess_train)
 
     def collate_fn(examples):
         pixel_values = torch.stack([example["pixel_values"] for example in examples])
