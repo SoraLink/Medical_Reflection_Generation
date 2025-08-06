@@ -41,6 +41,7 @@ def train(
 
     imagen = Imagen(
         unets = (unet1, unet2, unet3),
+        channels=1,
         text_encoder_name = 't5-large',
         image_sizes = (64, 256, 512),
         timesteps = 1000,
@@ -52,7 +53,6 @@ def train(
     dataset_length = len(dataset['train'])
     trainer = ImagenTrainer(
         imagen,
-        channels=1,
         use_ema=True,
         lr=1e-4,
         warmup_steps=500,
