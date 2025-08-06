@@ -43,6 +43,8 @@ class MINIM:
 def build_model(modal, model_path, model, device):
     if model == 'minim':
         return MINIM(modal, model_path, device)
+    elif model == 'diffusion':
+        return Diffusion(model_path, device)
     else:
         raise NotImplementedError
 
