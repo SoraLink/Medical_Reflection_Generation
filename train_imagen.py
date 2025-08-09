@@ -73,7 +73,7 @@ def train_one_unet(
 
     trainer.add_train_dataset(
         dataset['train'],
-        batch_size=16,
+        batch_size=8,
         collate_fn=Collator(
             image_size=512,
             image_label='image',
