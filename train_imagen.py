@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
-def train_one_epoch(
+def train_one_unet(
     unet,
     epoches,
     args
@@ -60,7 +60,7 @@ def train_one_epoch(
         use_ema=True,
         lr=1e-4,
         warmup_steps=500,
-        checkpoint_path='./checkpoints',
+        checkpoint_path=args.output_path,
         checkpoint_every=200,
         cosine_decay_max_steps=dataset_length*epoches,
         max_grad_norm=1.0,
@@ -69,13 +69,7 @@ def train_one_epoch(
     )
 
     if args.is_load:
-        model_path = Path(args.model_path)
-        full_model_path = str(model_path.resolve())
-        loaded = torch.load(str(model_path))
-        version = safeget(loaded, 'version')
-        print(f'loading Imagen from {full_model_path}, saved at version {version} - current package version is {__version__}')
-        trainer.load(model_path)
-
+        trainer.load_from_checkpoint_folder()
 
     trainer.add_train_dataset(
         dataset['train'],
@@ -89,25 +83,24 @@ def train_one_epoch(
             url_label=None
         )
     )
-    trainer.prepare()
+
 
 
     for i in range(epoches):
         progress = tqdm(range(len(trainer.train_dl)))
-        for _ in progress:
+        for step in progress:
             loss = trainer.train_step(unet_number=unet)
             progress.set_postfix(loss=f'{loss:.4f}')
 
-            if not (i % 500) and i > 0 and trainer.is_main:
+            if not (step % 500) and i > 0 and trainer.is_main:
                 valid_loss = trainer.valid_step(unet_number=unet)
                 print(f'valid loss: {valid_loss}')
 
-            if not (i % 200) and i > 0 and trainer.is_main:
+            if not (step % 200) and i > 0 and trainer.is_main:
                 images = trainer.sample(texts=["The lungs are clear of focal consolidation, pleural effusion or pneumothorax. The heart size is normal. The mediastinal contours are normal. Multiple surgical clips project over the left breast, and old left rib fractures are noted."],
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
                 images[0].save(f'./sample-{i // 100}.png')
-                trainer.save(args.output_path)
 
 def train(args):
     unet_epochs = {
@@ -117,12 +110,11 @@ def train(args):
     }
     for unet_number, epoch in unet_epochs.items():
         print('Training for unet number {}'.format(unet_number))
-        train_one_epoch(unet_number, epoch, args)
+        train_one_unet(unet_number, epoch, args)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output_path', type=str, default='./imagen_output/')
-    parser.add_argument('--model_path', type=str, default='./imagen_output/')
+    parser.add_argument('--output_path', type=str, default='./checkpoints')
     parser.add_argument('--is_load', action='store_true')
     args = parser.parse_args()
     train(args)
