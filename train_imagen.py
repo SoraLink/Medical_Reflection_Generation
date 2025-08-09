@@ -1,15 +1,19 @@
+import argparse
+from pathlib import Path
+
 import torch
 from datasets import load_dataset
 from imagen_pytorch import Unet, Imagen, ImagenTrainer
 from imagen_pytorch.data import Collator
+from imagen_pytorch.utils import safeget
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-model_path = './imagen_output/'
 
-def train(
+def train_one_epoch(
     unet,
-    epoches
+    epoches,
+    args
 ):
     unet1 = Unet(
         dim = 512,
@@ -64,6 +68,14 @@ def train(
         split_valid_fraction = 0.025
     )
 
+    if args.is_load:
+        model_path = Path(args.model_path)
+        full_model_path = str(model_path.resolve())
+        loaded = torch.load(str(model_path))
+        version = safeget(loaded, 'version')
+        print(f'loading Imagen from {full_model_path}, saved at version {version} - current package version is {__version__}')
+        trainer.load(model_path)
+
 
     trainer.add_train_dataset(
         dataset['train'],
@@ -95,14 +107,25 @@ def train(
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
                 images[0].save(f'./sample-{i // 100}.png')
-                trainer.save(model_path)
+                trainer.save(args.output_path)
 
-unet_epochs = {
-    1: 50,
-    2: 100,
-    3: 150
-}
+def train(args):
+    unet_epochs = {
+        1: 10,
+        2: 20,
+        3: 20
+    }
+    for unet_number, epoch in unet_epochs.items():
+        print('Training for unet number {}'.format(unet_number))
+        train_one_epoch(unet_number, epoch, args)
 
-for unet_number, epoch in unet_epochs.items():
-    print('Training for unet number {}'.format(unet_number))
-    train(unet_number, epoch)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output_path', type=str, default='./imagen_output/')
+    parser.add_argument('--model_path', type=str, default='./imagen_output/')
+    parser.add_argument('--is_load', action='store_true')
+    args = parser.parse_args()
+    train(args)
+
+if __name__ == '__main__':
+    main()
