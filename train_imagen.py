@@ -91,16 +91,16 @@ def train_one_unet(
         for step in progress:
             loss = trainer.train_step(unet_number=unet)
             progress.set_postfix(loss=f'{loss:.4f}')
-
-            if not (step % 500) and i > 0 and trainer.is_main:
+            print(step)
+            if not (step % 500) and step > 0 and trainer.is_main:
                 valid_loss = trainer.valid_step(unet_number=unet)
                 print(f'valid loss: {valid_loss}')
 
-            if not (step % 200) and i > 0 and trainer.is_main:
+            if not (step % 200) and step > 0 and trainer.is_main:
                 images = trainer.sample(texts=["The lungs are clear of focal consolidation, pleural effusion or pneumothorax. The heart size is normal. The mediastinal contours are normal. Multiple surgical clips project over the left breast, and old left rib fractures are noted."],
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
-                images[0].save(f'./sample-{i // 100}.png')
+                images[0].save(f'./sample-{i}-{step // 200}.png')
 
 def train(args):
     unet_epochs = {
