@@ -91,7 +91,6 @@ def train_one_unet(
         for step in progress:
             loss = trainer.train_step(unet_number=unet)
             progress.set_postfix(loss=f'{loss:.4f}')
-            print(step)
             if not (step % 500) and step > 0 and trainer.is_main:
                 valid_loss = trainer.valid_step(unet_number=unet)
                 print(f'valid loss: {valid_loss}')
