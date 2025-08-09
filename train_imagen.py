@@ -99,7 +99,7 @@ def train_one_unet(
                 images = trainer.sample(texts=["The lungs are clear of focal consolidation, pleural effusion or pneumothorax. The heart size is normal. The mediastinal contours are normal. Multiple surgical clips project over the left breast, and old left rib fractures are noted."],
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
-                images[0].save(f'./sample-{i}-{step // 200}.png')
+                images[0].save(f'./samples/sample-{i}-{step // 200}.png')
 
 def train(args):
     unet_epochs = {
