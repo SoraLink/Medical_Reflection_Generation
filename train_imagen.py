@@ -6,6 +6,7 @@ from datasets import load_dataset
 from imagen_pytorch import Unet, Imagen, ImagenTrainer
 from imagen_pytorch.data import Collator
 from imagen_pytorch.utils import safeget
+from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -50,7 +51,16 @@ def train_one_unet(
         image_sizes = (64, 256, 512),
         timesteps = 1000,
         cond_drop_prob = 0.1
-    ).cuda()
+    ).cuda(0)
+
+    if torch.cuda.device_count() >= 2:
+        device_ids = [0, 1]
+        wrapped_unets = []
+        for u in imagen.unets:
+            u = nn.DataParallel(u, device_ids=device_ids).cuda(device_ids[0])
+            wrapped_unets.append(u)
+        imagen.unets = nn.ModuleList(wrapped_unets)
+
 
     dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset")
     dataset  = dataset["train"].train_test_split(test_size=0.1, seed=42)
