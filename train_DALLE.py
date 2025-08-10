@@ -2,6 +2,7 @@
 import argparse, numpy as np
 from datasets import load_dataset, Dataset
 from PIL import Image
+import jax
 import jax.numpy as jnp
 from vqgan_jax.modeling_flax_vqgan import VQModel
 
