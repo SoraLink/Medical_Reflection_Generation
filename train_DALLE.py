@@ -28,10 +28,10 @@ def main():
     vq, params = VQModel.from_pretrained(args.vqgan_id, _do_init=False)
 
     @jax.jit
-    def encode_batch(imgs_f32_m11):
-        out = vq.encode(imgs_f32_m11, params=params)
+    def encode_batch(imgs):
+        out = vq.encode(imgs, params=params)
 
-        # 取出 codes：兼容 tuple / dict / 其它
+        # 兼容 tuple / dict / 其它返回
         if isinstance(out, (tuple, list)):
             codes = out[0]
         elif isinstance(out, dict):
@@ -42,8 +42,7 @@ def main():
             codes = out
 
         codes = jnp.asarray(codes)
-
-        # 统一到 (B,16,16)，兼容 (16,16)、(16,256)、(B,16,256)
+        # 统一到 (B,16,16)
         if codes.ndim == 3 and codes.shape[-2:] == (16, 16):
             pass
         elif codes.ndim == 2 and codes.shape == (16, 16):
@@ -53,8 +52,7 @@ def main():
             codes = codes.reshape(b, 16, 16)  # -> (B,16,16)
         else:
             raise ValueError(f"未知编码形状: {tuple(codes.shape)}，无法规整到 (B,16,16)")
-
-        return codes  # (B,16,16)
+        return codes
 
     def encode_rows(batch):
         pil_list = batch["image"]
