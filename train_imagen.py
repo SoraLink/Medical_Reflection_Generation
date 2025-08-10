@@ -51,16 +51,7 @@ def train_one_unet(
         image_sizes = (64, 256, 512),
         timesteps = 1000,
         cond_drop_prob = 0.1
-    ).cuda(0)
-
-    if torch.cuda.device_count() >= 2:
-        device_ids = [0, 1]
-        wrapped_unets = []
-        for u in imagen.unets:
-            u = nn.DataParallel(u, device_ids=device_ids).cuda(device_ids[0])
-            wrapped_unets.append(u)
-        imagen.unets = nn.ModuleList(wrapped_unets)
-
+    ).cuda()
 
     dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset")
     dataset  = dataset["train"].train_test_split(test_size=0.1, seed=42)
