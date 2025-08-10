@@ -28,18 +28,18 @@ def main():
     vq, params = VQModel.from_pretrained(args.vqgan_id, _do_init=False)
 
     @jax.jit
-    def encode_batch(imgs_f32_m11):  # [B,256,256,3], float32 in [-1,1]
+    def encode_batch(imgs_f32_m11):
         out = vq.encode(imgs_f32_m11, params=params)
-        if not isinstance(out, dict) or "encoding_indices" not in out:
-            raise ValueError(
-                f"VQ encode()返回不含encoding_indices: type={type(out)}, "
-                f"keys={list(out.keys()) if isinstance(out, dict) else None}"
-            )
-        codes = out["encoding_indices"]  # 期望 [B,16,16]
+        if isinstance(out, (tuple, list)):
+            codes = out[0]  # tuple 第一个就是编码
+        elif isinstance(out, dict) and "encoding_indices" in out:
+            codes = out["encoding_indices"]
+        else:
+            raise ValueError(f"无法识别的 vq.encode 输出: {type(out)}, {out}")
         h, w = int(codes.shape[-2]), int(codes.shape[-1])
         if (h, w) != (16, 16):
-            raise ValueError(f"VQ codes 空间尺寸应为 16x16，实际 {h}x{w}。检查 vq 模型或预处理。")
-        return codes  # int-like, [B,16,16]
+            raise ValueError(f"编码尺寸错误，应为 16x16，实际 {h}x{w}")
+        return codes
 
     def encode_rows(batch):
         pil_list = batch["image"]
