@@ -30,16 +30,31 @@ def main():
     @jax.jit
     def encode_batch(imgs_f32_m11):
         out = vq.encode(imgs_f32_m11, params=params)
+
+        # 取出 codes：兼容 tuple / dict / 其它
         if isinstance(out, (tuple, list)):
-            codes = out[0]  # tuple 第一个就是编码
-        elif isinstance(out, dict) and "encoding_indices" in out:
-            codes = out["encoding_indices"]
+            codes = out[0]
+        elif isinstance(out, dict):
+            codes = out.get("encoding_indices") or out.get("indices")
+            if codes is None:
+                raise ValueError(f"encode()未找到indices，keys={list(out.keys())}")
         else:
-            raise ValueError(f"无法识别的 vq.encode 输出: {type(out)}, {out}")
-        h, w = int(codes.shape[-2]), int(codes.shape[-1])
-        if (h, w) != (16, 16):
-            raise ValueError(f"编码尺寸错误，应为 16x16，实际 {h}x{w}")
-        return codes
+            codes = out
+
+        codes = jnp.asarray(codes)
+
+        # 统一到 (B,16,16)，兼容 (16,16)、(16,256)、(B,16,256)
+        if codes.ndim == 3 and codes.shape[-2:] == (16, 16):
+            pass
+        elif codes.ndim == 2 and codes.shape == (16, 16):
+            codes = codes[None, ...]  # -> (1,16,16)
+        elif codes.ndim in (2, 3) and codes.shape[-2] == 16 and codes.shape[-1] == 256:
+            b = 1 if codes.ndim == 2 else codes.shape[0]
+            codes = codes.reshape(b, 16, 16)  # -> (B,16,16)
+        else:
+            raise ValueError(f"未知编码形状: {tuple(codes.shape)}，无法规整到 (B,16,16)")
+
+        return codes  # (B,16,16)
 
     def encode_rows(batch):
         pil_list = batch["image"]
