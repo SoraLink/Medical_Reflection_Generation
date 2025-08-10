@@ -56,8 +56,8 @@ def main():
     train = ds["train"].map(encode_rows, num_proc=1, remove_columns=ds["train"].column_names, batched=True, batch_size=32)
     val   = ds["test" ].map(encode_rows, num_proc=1, remove_columns=ds["test" ].column_names, batched=True, batch_size=32)
 
-    Dataset.from_dict(train).to_parquet(f"{args.out_dir}/train.parquet")
-    Dataset.from_dict(val  ).to_parquet(f"{args.out_dir}/val.parquet")
+    train.to_parquet(f"{args.out_dir}/train.parquet")
+    val.to_parquet(f"{args.out_dir}/val.parquet")
     print("Wrote:", f"{args.out_dir}/train.parquet", f"{args.out_dir}/val.parquet")
 
 if __name__ == "__main__":
