@@ -20,10 +20,20 @@ def main():
     ds = ds['train'].train_test_split(test_size=args.val_ratio, seed=42)
     vq, params = VQModel.from_pretrained(args.vqgan_id, _do_init=False)
 
-    def encode_row(ex):
-        arr = img256(ex["image"])
-        code = np.array(vq.encode(jnp.asarray(arr)[None, ...], params=params))[0].reshape(-1).astype(np.int32) # [256]
-        return {"caption": (ex.get("findings") or ""), "encoding": code}
+    @jax.jit
+    def encode_batch(imgs):  # imgs: [B,256,256,3] float32 in [0,1]
+        return vq.encode(imgs, params=params)  # -> [B,16,16] int
+
+    def img256(pil):
+        return np.asarray(pil.convert("RGB").resize((256, 256), Image.BICUBIC), dtype=np.float32) / 255.0
+
+    def encode_rows(batch):
+        pil_list = batch["image"]  # list[PIL.Image]
+        imgs = np.stack([img256(p) for p in pil_list], 0)  # [B,256,256,3]
+        codes = np.asarray(encode_batch(jnp.asarray(imgs)))  # [B,16,16]
+        enc = codes.reshape(codes.shape[0], -1).astype(np.int32)  # [B,256]
+        caps = batch.get("findings", [""] * enc.shape[0])  # list[str]
+        return {"caption": caps, "encoding": enc}
 
     train = ds["train"].map(encode_row, num_proc=1, remove_columns=ds["train"].column_names, batched=True, batch_size=32)
     val   = ds["test" ].map(encode_row, num_proc=1, remove_columns=ds["test" ].column_names, batched=True, batch_size=32)
