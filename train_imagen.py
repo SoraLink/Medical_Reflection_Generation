@@ -83,7 +83,7 @@ def train_one_unet(
 
     trainer.add_train_dataset(
         dataset['train'],
-        batch_size=8,
+        batch_size=4,
         collate_fn=Collator(
             image_size=512,
             image_label='image',
@@ -109,12 +109,12 @@ def train_one_unet(
                 images = trainer.sample(texts=["The lungs are clear of focal consolidation, pleural effusion or pneumothorax. The heart size is normal. The mediastinal contours are normal. Multiple surgical clips project over the left breast, and old left rib fractures are noted."],
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
-                images[0].save(f'./samples/sample-{i}-{step // 200}.png')
+                images[0].save(f'./samples/sample-{i}-{step // 2000}.png')
 
 def train(args):
     unet_epochs = {
-        1: 10,
-        2: 20,
+        #1: 10,
+        #2: 20,
         3: 20
     }
     for unet_number, epoch in unet_epochs.items():
