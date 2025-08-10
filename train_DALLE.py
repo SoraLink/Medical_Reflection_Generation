@@ -25,8 +25,8 @@ def main():
         code = np.array(vq.encode(jnp.asarray(arr)[None, ...], params=params))[0].reshape(-1).astype(np.int32) # [256]
         return {"caption": (ex.get("findings") or ""), "encoding": code}
 
-    train = ds["train"].map(encode_row, num_proc=4, remove_columns=ds["train"].column_names)
-    val   = ds["test" ].map(encode_row, num_proc=4, remove_columns=ds["test" ].column_names)
+    train = ds["train"].map(encode_row, num_proc=1, remove_columns=ds["train"].column_names, batched=True, batch_size=32)
+    val   = ds["test" ].map(encode_row, num_proc=1, remove_columns=ds["test" ].column_names, batched=True, batch_size=32)
 
     Dataset.from_dict(train).to_parquet(f"{args.out_dir}/train.parquet")
     Dataset.from_dict(val  ).to_parquet(f"{args.out_dir}/val.parquet")
