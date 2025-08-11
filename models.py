@@ -112,7 +112,10 @@ class ImagenModel:
             warmup_steps=500,
             checkpoint_path=model_path,
             checkpoint_every=200,
+            cosine_decay_max_steps=30000,
             max_grad_norm=1.0,
+            split_valid_from_train=True,
+            split_valid_fraction=0.025
         )
         self.model.load_from_checkpoint_folder()
 
