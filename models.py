@@ -8,7 +8,7 @@ from accelerate import Accelerator
 from datasets import load_dataset
 from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler
 import torch.nn.functional as F
-from imagen_pytorch import Unet, Imagen, ImagenTrainer
+from imagen_pytorch import Unet, Imagen, ImagenTrainer, load_imagen_from_checkpoint
 from packaging import version
 from tqdm import tqdm
 
@@ -105,26 +105,25 @@ class ImagenModel:
             timesteps=1000,
             cond_drop_prob=0.1
         ).cuda()
-        self.model = ImagenTrainer(
-            imagen,
-            use_ema=True,
-            lr=1e-4,
-            warmup_steps=500,
-            checkpoint_path=model_path,
-            checkpoint_every=200,
-            cosine_decay_max_steps=30000,
-            max_grad_norm=1.0,
-            split_valid_from_train=True,
-            split_valid_fraction=0.025
-        )
-        self.model.load_from_checkpoint_folder()
+        try:
+            self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
+        except Exception:
+            # 兜底：若没有打包的checkpoint，就用手动方式加载
+            ckpt = torch.load(model_path, map_location=self.device)
+            imagen.load_state_dict(ckpt['model'] if isinstance(ckpt, dict) and 'model' in ckpt else ckpt)
+            self.imagen = imagen
 
-    def __call__(self, prompts, num_inference_steps):
-        images = self.model.sample(
+        self.imagen.eval()
+
+    @torch.no_grad()
+    def __call__(self, prompts, stop_at_unet_number: int = 3, cond_scale: float = 3.0,
+                 return_pil_images: bool = True):
+        images = self.imagen.sample(
             texts=prompts,
             batch_size=len(prompts),
-            return_pil_images=True,
-            stop_at_unet_number=3
+            return_pil_images=return_pil_images,
+            stop_at_unet_number=stop_at_unet_number,
+            cond_scale=cond_scale
         )
         return images
 
