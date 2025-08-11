@@ -117,7 +117,7 @@ class ImagenModel:
         self.imagen.eval()
 
     @torch.no_grad()
-    def __call__(self, prompts, stop_at_unet_number: int = 3, cond_scale: float = 3.0,
+    def __call__(self, prompts, num_inference_steps, stop_at_unet_number: int = 3, cond_scale: float = 3.0,
                  return_pil_images: bool = True):
         images = self.imagen.sample(
             texts=prompts,
