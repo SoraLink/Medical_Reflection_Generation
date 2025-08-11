@@ -69,6 +69,7 @@ class Diffusion:
 class ImagenModel:
 
     def __init__(self, model_path, device):
+        self.device = device
         unet1 = Unet(
             dim=512,
             cond_dim=512,
