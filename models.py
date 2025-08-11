@@ -8,6 +8,7 @@ from accelerate import Accelerator
 from datasets import load_dataset
 from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler
 import torch.nn.functional as F
+from imagen_pytorch import Unet, Imagen, ImagenTrainer
 from packaging import version
 from tqdm import tqdm
 
@@ -45,6 +46,8 @@ def build_model(modal, model_path, model, device):
         return MINIM(modal, model_path, device)
     elif model == 'diffusion':
         return Diffusion(model_path, device)
+    elif model == 'imagen':
+        return ImagenModel(model_path, device)
     else:
         raise NotImplementedError
 
@@ -61,6 +64,65 @@ class Diffusion:
             prompt=prompts,
             num_inference_steps=num_inference_steps
         ).images
+        return images
+
+class ImagenModel:
+
+    def __init__(self, model_path, device):
+        unet1 = Unet(
+            dim=512,
+            cond_dim=512,
+            dim_mults=(1, 2, 3, 4),
+            num_resnet_blocks=3,
+            layer_attns=(False, True, True, True),
+            layer_cross_attns=(False, True, True, True),
+            attn_heads=8
+        )
+
+        unet2 = Unet(
+            dim=128,
+            dim_mults=(1, 2, 4, 8),
+            num_resnet_blocks=(2, 4, 8, 8),
+            layer_attns=(False, False, False, True),
+            layer_cross_attns=(False, False, False, True),
+            attn_heads=8
+        )
+
+        unet3 = Unet(
+            dim=128,
+            dim_mults=(1, 2, 4, 8),
+            num_resnet_blocks=(2, 4, 8, 8),
+            layer_attns=False,
+            layer_cross_attns=(False, False, False, True),
+            attn_heads=8
+        )
+
+        imagen = Imagen(
+            unets=(unet1, unet2, unet3),
+            channels=1,
+            text_encoder_name='t5-large',
+            image_sizes=(64, 256, 512),
+            timesteps=1000,
+            cond_drop_prob=0.1
+        ).cuda()
+        self.model = ImagenTrainer(
+            imagen,
+            use_ema=True,
+            lr=1e-4,
+            warmup_steps=500,
+            checkpoint_path=model_path,
+            checkpoint_every=200,
+            max_grad_norm=1.0,
+        )
+        self.model.load_from_checkpoint_folder()
+
+    def __call__(self, prompts, num_inference_steps):
+        images = self.model.sample(
+            texts=prompts,
+            batch_size=len(prompts),
+            return_pil_images=True,
+            stop_at_unet_number=3
+        )
         return images
 
 dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset", split='train')
