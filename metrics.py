@@ -28,6 +28,8 @@ class Metrics:
 
 
     def add_images(self, real_imgs, pred_imgs):
+        if pred_imgs.shape[1] == 1:  # [B, 1, H, W]
+            pred_imgs = pred_imgs.repeat(1, 3, 1, 1)
         batch_acts_r, _ = self._get_activations(real_imgs)
         batch_acts_g, batch_pred = self._get_activations(pred_imgs)
         self.acts_r.append(batch_acts_r)
