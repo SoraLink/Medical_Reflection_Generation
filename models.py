@@ -8,7 +8,7 @@ from accelerate import Accelerator
 from datasets import load_dataset
 from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler
 import torch.nn.functional as F
-from imagen_pytorch import Unet, Imagen, ImagenTrainer, load_imagen_from_checkpoint
+from imagen_pytorch import Unet, Imagen, ImagenTrainer, load_imagen_from_checkpoint, ElucidatedImagen
 from packaging import version
 from tqdm import tqdm
 
@@ -99,12 +99,12 @@ class ImagenModel:
         )
 
         imagen = Imagen(
-            unets=(unet1, unet2),
+            unets=(unet1, unet2, unet3),
             channels=1,
             text_encoder_name='t5-large',
-            image_sizes=(64, 256),
-            timesteps=1000,
-            cond_drop_prob=0.1
+            image_sizes=(64, 256, 512),
+            cond_drop_prob=0.1,
+            timesteps=50
         ).cuda()
         try:
             self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
