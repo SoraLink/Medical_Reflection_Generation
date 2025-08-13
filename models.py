@@ -151,6 +151,7 @@ class DALLEModel:
     def __call__(self, prompts, num_inference_steps):
         text_tokens = tokenizer.tokenize(prompts, self.dalle.text_seq_len).cuda()
         output = self.dalle.generate_images(text_tokens)
+        output = F.interpolate(output, size=(512, 512), mode="bilinear", align_corners=False)
         pil_images = self.dalle_tensor_to_pil(output)
         return pil_images
 
