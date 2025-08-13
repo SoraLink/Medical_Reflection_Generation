@@ -1,15 +1,21 @@
 import copy
 import os.path
 import random
+from pathlib import Path
+from typing import List
 
 import accelerate
 import torch
+from PIL import Image
 from accelerate import Accelerator
+from dalle_pytorch import VQGanVAE, DALLE
 from datasets import load_dataset
 from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler
 import torch.nn.functional as F
 from imagen_pytorch import Unet, Imagen, ImagenTrainer, load_imagen_from_checkpoint, ElucidatedImagen
+from dalle_pytorch.tokenizer import tokenizer
 from packaging import version
+from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
 
 
@@ -48,6 +54,8 @@ def build_model(modal, model_path, model, device):
         return Diffusion(model_path, device)
     elif model == 'imagen':
         return ImagenModel(model_path, device)
+    elif model == 'dalle':
+        return DALLEModel(model_path, device)
     else:
         raise NotImplementedError
 
@@ -127,6 +135,47 @@ class ImagenModel:
             cond_scale=cond_scale
         )
         return images
+
+class DALLEModel:
+
+    def __init__(self,  model_path, device):
+        dalle_path = Path(model_path)
+        load_obj = torch.load(str(dalle_path))
+        dalle_params, vae_params, weights, vae_class_name, version = load_obj.pop('hparams'), load_obj.pop(
+            'vae_params'), load_obj.pop('weights'), load_obj.pop('vae_class_name', None), load_obj.pop('version', None)
+        vae = VQGanVAE()
+        self.dalle = DALLE(vae=vae, **dalle_params).cuda()
+        self.dalle.load_state_dict(weights)
+        self.image_size = vae.image_size
+
+    def __call__(self, prompts, num_inference_steps):
+        text_tokens = self.dalle.generate_texts(prompts, self.dalle.text_seq_len).cuda()
+        output = self.dalle.generate_images(text_tokens)
+        pil_images = self.dalle_tensor_to_pil(output)
+        return pil_images
+
+    def dalle_tensor_to_pil(self, t: torch.Tensor) -> List[Image.Image]:
+        """
+        将 DALLE 输出张量转为 PIL.Image 列表。
+        参数:
+          t: torch.Tensor, [B,3,H,W] 或 [3,H,W]，float，通常在 [-1,1]
+        返回:
+          List[PIL.Image.Image]
+        """
+        if t is None:
+            return []
+        # 拉到 CPU、float32，兼容单张/批量
+        t = t.detach().to("cpu", torch.float32)
+        if t.dim() == 3:
+            t = t.unsqueeze(0)
+
+        # 映射到 [0,1]，适配扩散模型常见的 [-1,1] 输出
+        if t.min() < 0:
+            t = (t.clamp(-1, 1) + 1) / 2
+        else:
+            t = t.clamp(0, 1)
+
+        return [to_pil_image(img) for img in t]
 
 dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset", split='train')
 sample = random.choice(dataset)
