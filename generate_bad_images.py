@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, default='./data_with_bad')
     parser.add_argument('--steps', type=int, default=50)
     parser.add_argument('--shard_maxcount', type=int, default=2000)
+    parser.add_argument('--modality', type=str, choices=['CXR', 'ChestCT'], default='CXR')
     return parser.parse_args()
 
 def pil_to_png_bytes(img: Image.Image) -> bytes:
