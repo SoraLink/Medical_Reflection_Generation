@@ -6,11 +6,13 @@ from pathlib import Path
 
 import torch
 from PIL import Image
+from datasets import load_dataset
+from torch.utils.data import DataLoader
 from torchvision.transforms.functional import to_tensor
 from tqdm import tqdm
+from transformers import CLIPTokenizer
 from webdataset.writer import ShardWriter
 
-from evaluation import get_cxr_loader
 from models import Diffusion
 import webdataset as wds
 
@@ -24,7 +26,6 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, default='./data_with_bad')
     parser.add_argument('--steps', type=int, default=50)
     parser.add_argument('--shard_maxcount', type=int, default=2000)
-    parser.add_argument('--modality', type=str, choices=['CXR', 'ChestCT'], default='CXR')
     return parser.parse_args()
 
 def pil_to_png_bytes(img: Image.Image) -> bytes:
@@ -33,6 +34,26 @@ def pil_to_png_bytes(img: Image.Image) -> bytes:
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
+
+tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+
+def get_cxr_loader(args):
+    dataset = load_dataset(args.dataset, split='train')
+    split_datasets = dataset.train_test_split(test_size=0.1, seed=42)
+    dataset = split_datasets["train"]
+
+    def collate_fn(batch):
+        real_images = []
+        prompts = []
+        for item in batch:
+            prompt = f'''{item['findings']}\n'''
+            tokenized = tokenizer(prompt, truncation=False)
+            if len(tokenized["input_ids"]) <= 77:
+                real_images.append(item["image"].convert("RGB"))
+                prompts.append(prompt)
+        return real_images, prompts
+    loader = DataLoader(dataset, batch_size=16, shuffle=False, collate_fn=collate_fn)
+    return loader
 
 def main():
     args = parse_args()
