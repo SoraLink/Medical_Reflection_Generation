@@ -35,17 +35,8 @@ def train_one_unet(
         attn_heads=8
     )
 
-    unet3 = Unet(
-        dim=128,
-        dim_mults=(1, 2, 4, 8),
-        num_resnet_blocks=(2, 4, 8, 8),
-        layer_attns=False,
-        layer_cross_attns=(False, False, False, True),
-        attn_heads=8
-    )
-
     imagen = Imagen(
-        unets = (unet1, unet2, unet3),
+        unets = (unet1, unet2),
         channels=1,
         text_encoder_name = 't5-large',
         image_sizes = (64, 256, 512),
@@ -54,7 +45,7 @@ def train_one_unet(
     ).cuda()
 
     dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset")
-    dataset  = dataset["train"].train_test_split(test_size=0.1, seed=42)
+    dataset  = dataset["train"].train_test_split(test_size=0.5, seed=42)
     dataset_length = len(dataset['train'])
     trainer = ImagenTrainer(
         imagen,
@@ -69,14 +60,14 @@ def train_one_unet(
         split_valid_fraction = 0.025
     )
 
-    if args.is_load:
-        trainer.load_from_checkpoint_folder()
+
+    trainer.load_from_checkpoint_folder()
 
     trainer.add_train_dataset(
         dataset['train'],
         batch_size=1,
         collate_fn=Collator(
-            image_size=512,
+            image_size=256,
             image_label='image',
             text_label='findings',
             name="google/t5-v1_1-large",
@@ -105,9 +96,8 @@ def train_one_unet(
 
 def train(args):
     unet_epochs = {
-        #1: 10,
-        #2: 20,
-        3: 20
+        1: 10,
+        2: 20
     }
     for unet_number, epoch in unet_epochs.items():
         print('Training for unet number {}'.format(unet_number))
@@ -116,7 +106,6 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_path', type=str, default='./checkpoints')
-    parser.add_argument('--is_load', action='store_true')
     args = parser.parse_args()
     train(args)
 
