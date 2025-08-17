@@ -67,7 +67,7 @@ def train_one_unet(
         dataset['train'],
         batch_size=1,
         collate_fn=Collator(
-            image_size=512,
+            image_size=256,
             image_label='image',
             text_label='findings',
             name="google/t5-v1_1-large",
