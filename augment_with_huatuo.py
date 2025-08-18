@@ -112,11 +112,11 @@ def run(args):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", required=True,
+    ap.add_argument("--input",
                     default="/data/sora/Medical_Reflection_Generation/data_with_bad/cxr-{000000..000007}.tar")
-    ap.add_argument("--output", required=True,
+    ap.add_argument("--output",
                     default= "/data/out/ds_huatuo-%06d.tar")
-    ap.add_argument("--model_path", required=True,
+    ap.add_argument("--model_path",
                     default='FreedomIntelligence/HuatuoGPT-Vision-34B')
     ap.add_argument("--shard_maxcount", type=int, default=2000)
     ap.add_argument("--pad", type=int, default=16, help="左右拼图的间隔像素")
