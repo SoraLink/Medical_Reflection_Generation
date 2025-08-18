@@ -113,11 +113,11 @@ def run(args):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", required=True,
-                    help="输入分片，例如 /data/in/ds-{000000..000099}.tar")
+                    default="/data/sora/Medical_Reflection_Generation/data_with_bad/cxr-{000000..000007}.tar")
     ap.add_argument("--output", required=True,
-                    help="输出分片模式，例如 /data/out/ds_huatuo-%06d.tar")
+                    default= "/data/out/ds_huatuo-%06d.tar")
     ap.add_argument("--model_path", required=True,
-                    help="HuatuoGPT-Vision 模型目录或HF模型名，如 FreedomIntelligence/HuatuoGPT-Vision-34B")
+                    default='FreedomIntelligence/HuatuoGPT-Vision-34B')
     ap.add_argument("--shard_maxcount", type=int, default=2000)
     ap.add_argument("--pad", type=int, default=16, help="左右拼图的间隔像素")
     ap.add_argument("--jpeg_quality", type=int, default=95)
