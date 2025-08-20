@@ -69,53 +69,42 @@ def run(args):
 
     with ShardWriter(args.output, maxcount=args.shard_maxcount) as sink:
         for real_bytes, gen_bytes, prompt_bytes, key in tqdm(ds, desc="augment"):
-            try:
-                # 1) 拼图
-                real_pil = pil_from_bytes(real_bytes)
-                gen_pil  = pil_from_bytes(gen_bytes)
-                merged_pil = make_side_by_side(real_pil, gen_pil, pad=args.pad)
-                merged_jpg = pil_to_jpg_bytes(merged_pil, quality=args.jpeg_quality)
 
-                # 2) 调用 Huatuo 推理（用临时文件存一份，因 HuatuoChatbot 接口走路径列表）
-                with tempfile.TemporaryDirectory() as td:
-                    mp = os.path.join(td, f"{key}_merged.jpg")
-                    with open(mp, "wb") as f:
-                        f.write(merged_jpg)
+            # 1) 拼图
+            real_pil = pil_from_bytes(real_bytes)
+            gen_pil  = pil_from_bytes(gen_bytes)
+            merged_pil = make_side_by_side(real_pil, gen_pil, pad=args.pad)
+            merged_jpg = pil_to_jpg_bytes(merged_pil, quality=args.jpeg_quality)
 
-                    query = f"{SYSTEM_PROMPT}\n{USER_PROMPT}"
-                    out_text = bot.inference(query, [mp])  # 官方接口：文本 + [单图路径]
-                    print(out_text)
+            # 2) 调用 Huatuo 推理（用临时文件存一份，因 HuatuoChatbot 接口走路径列表）
+            with tempfile.TemporaryDirectory() as td:
+                mp = os.path.join(td, f"{key}_merged.jpg")
+                with open(mp, "wb") as f:
+                    f.write(merged_jpg)
+
+                query = f"{SYSTEM_PROMPT}\n{USER_PROMPT}"
+                out_text = bot.inference(query, [mp])  # 官方接口：文本 + [单图路径]
+                print(out_text)
 
 
-                # 3) 组织输出样本（保留原字段，新增两个字段）
-                uid += 1
-                sample = {
-                    "__key__": key,                         # 复用原key
-                    "real.png": real_bytes,                 # 原样保存
-                    "gen.png":  gen_bytes,                  # 原样保存
-                    "prompt.txt": prompt_bytes,             # 原样保存
-                    "merged.jpg": merged_jpg,               # 方便复核
-                    "huatuo.json": out_text.encode("utf-8"),
-                }
-                sink.write(sample)
-
-            except Exception as e:
-                err = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
-                sample = {
-                    "__key__": key,
-                    "real.png": real_bytes,
-                    "gen.png": gen_bytes,
-                    "prompt.txt": prompt_bytes,
-                    "error.txt": err.encode("utf-8"),
-                }
-                sink.write(sample)
+            # 3) 组织输出样本（保留原字段，新增两个字段）
+            uid += 1
+            sample = {
+                "__key__": key,                         # 复用原key
+                "real.png": real_bytes,                 # 原样保存
+                "gen.png":  gen_bytes,                  # 原样保存
+                "prompt.txt": prompt_bytes,             # 原样保存
+                "merged.jpg": merged_jpg,               # 方便复核
+                "huatuo.json": out_text.encode("utf-8"),
+            }
+            sink.write(sample)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--input",
                     default="/data/sora/Medical_Reflection_Generation/data_with_bad/cxr-{000000..000007}.tar")
     ap.add_argument("--output",
-                    default= "/data/out/ds_huatuo-%06d.tar")
+                    default= "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-%06d.tar")
     ap.add_argument("--model_path",
                     default='FreedomIntelligence/HuatuoGPT-Vision-34B')
     ap.add_argument("--shard_maxcount", type=int, default=2000)
