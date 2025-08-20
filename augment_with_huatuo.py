@@ -11,7 +11,6 @@ from tqdm import tqdm
 # 让脚本能找到 HuatuoGPT-Vision 的 cli.py（里面有 HuatuoChatbot）
 # 做法1：把仓库路径加到 PYTHONPATH；做法2：这里 sys.path.append 一下
 # 比如：sys.path.append("/path/to/HuatuoGPT-Vision")
-sys.path.append("/path/to/HuatuoGPT-Vision")   # ←←← 改成你的实际路径
 from cli import HuatuoChatbot  # HuatuoGPT-Vision 官方提供的推理类
 
 def pil_from_bytes(b):
@@ -62,6 +61,30 @@ USER_PROMPT = (
     "4. Provide clear suggestions on how to modify the generated image to better reflect the description and achieve higher realism."
 )
 
+def load_done_keys(state_path: Path) -> set:
+    """从进度文件加载已完成的 key 集合。"""
+    done = set()
+    if state_path.exists():
+        with open(state_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    k = obj.get("key")
+                    if k is not None:
+                        done.add(k)
+                except Exception:
+                    # 容忍坏行
+                    continue
+    return done
+
+def append_done_key(state_path: Path, key: str):
+    """把一个完成的 key 追加到进度文件。"""
+    with open(state_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"key": key}, ensure_ascii=False) + "\n")
+
 def run(args):
     # 初始化模型
     bot = HuatuoChatbot(args.model_path)  # 例如 "FreedomIntelligence/HuatuoGPT-Vision-34B" 或本地路径
@@ -73,13 +96,23 @@ def run(args):
     )
 
     # 写出新数据分片：在原有字段基础上，新增 huatuo.json 与 merged.jpg
-    now = datetime.now().strftime("%Y%m%d%H%M%S")
     uid = 0
-    os.makedirs(Path(args.output).parent, exist_ok=True)
+    out_path = Path(args.output)
+    out_dir = out_path.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    state_path = Path(args.state_file) if args.state_file else (
+        out_dir / (out_path.stem + ".state.jsonl")
+    )
+
+    done_keys = load_done_keys(state_path) if args.resume else set()
+    if args.resume and done_keys:
+        print(f"[resume] loaded {len(done_keys)} done keys from {state_path}")
 
     with ShardWriter(args.output, maxcount=args.shard_maxcount) as sink:
         for real_bytes, gen_bytes, prompt_bytes, key in tqdm(ds, desc="augment"):
-
+            if args.resume and key in done_keys:
+                continue
             # 1) 拼图
             real_pil = pil_from_bytes(real_bytes)
             gen_pil  = pil_from_bytes(gen_bytes)
@@ -110,6 +143,7 @@ def run(args):
                 "huatuo.json": out_text[0].encode("utf-8"),
             }
             sink.write(sample)
+            append_done_key(state_path, key)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -122,5 +156,9 @@ if __name__ == "__main__":
     ap.add_argument("--shard_maxcount", type=int, default=2000)
     ap.add_argument("--pad", type=int, default=16, help="左右拼图的间隔像素")
     ap.add_argument("--jpeg_quality", type=int, default=95)
+    ap.add_argument("--resume", action="store_true",
+                    help="启用断点续跑：跳过进度文件中已完成的 key")
+    ap.add_argument("--state_file", default="/data/sora/Medical_Reflection_Generation/out/ds_huatuo.state.jsonl",
+                    help="进度文件路径（默认：<output_stem>.state.jsonl）")
     args = ap.parse_args()
     run(args)
