@@ -39,17 +39,27 @@ def make_side_by_side(imgL: Image.Image, imgR: Image.Image, pad=16, bg=(0,0,0)):
     return canvas
 
 SYSTEM_PROMPT = (
-    "You are a medical imaging quality control assistant, focusing only on image quality and compliance (non-diagnostic). "
-    "The left image is a qualified reference, and the right image is the one to be improved. "
-    "Compare them according to: positioning & rotation, field coverage, inspiration level, exposure/contrast, sharpness/motion artifacts, noise/grid artifacts, boundary cutoff, labeling compliance. "
-    "Write a detailed reflection in natural language, highlighting key differences, possible root causes, and suggestions for improvement."
+    "You are a medical imaging evaluation assistant. "
+    "The left image is a real chest X-ray. "
+    "The diagnostic report below was written by a doctor based on this real image. "
+    "The right image is a generated chest X-ray created from that diagnostic description. "
+    "Your task is to evaluate how well the generated image (right) aligns with the diagnostic description, "
+    "using the real X-ray (left) as the ground truth reference. "
+    "Then, identify what aspects of the generated image should be improved to: "
+    "1) better match the diagnostic description, and "
+    "2) look more realistic as a chest X-ray. "
+    "Focus on anatomical accuracy, realism, and consistency with the description. "
+    "Provide a detailed reflection that highlights discrepancies and gives concrete improvement suggestions."
 )
 
 USER_PROMPT = (
-    "Compare the image quality of the two chest X-rays. "
-    "Focus only on aspects that need improvement in the right image. "
-    "Provide a clear reflection that highlights the differences, explains possible causes, "
-    "and suggests practical ways to improve the image quality."
+    "Diagnostic description (from the real image):\n"
+    "{diagnostic_description}\n\n"
+    "Task:\n"
+    "1. Compare the real chest X-ray (left), the diagnostic description, and the generated chest X-ray (right). "
+    "2. Assess whether the generated image matches the diagnostic description. "
+    "3. Point out areas where the generated image deviates from the description or appears unrealistic. "
+    "4. Provide clear suggestions on how to modify the generated image to better reflect the description and achieve higher realism."
 )
 
 def run(args):
@@ -81,8 +91,10 @@ def run(args):
                 mp = os.path.join(td, f"{key}_merged.jpg")
                 with open(mp, "wb") as f:
                     f.write(merged_jpg)
-
-                query = f"{SYSTEM_PROMPT}\n{USER_PROMPT}"
+                diagnostic_description = prompt_bytes.decode("utf-8")
+                query = (SYSTEM_PROMPT + "\n" + USER_PROMPT).format(
+                    diagnostic_description=diagnostic_description
+                )
                 out_text = bot.inference(query, [mp])  # 官方接口：文本 + [单图路径]
                 print(out_text)
 
@@ -95,7 +107,7 @@ def run(args):
                 "gen.png":  gen_bytes,                  # 原样保存
                 "prompt.txt": prompt_bytes,             # 原样保存
                 "merged.jpg": merged_jpg,               # 方便复核
-                "huatuo.json": out_text.encode("utf-8"),
+                "huatuo.json": out_text[0].encode("utf-8"),
             }
             sink.write(sample)
 
