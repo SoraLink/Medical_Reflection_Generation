@@ -147,7 +147,7 @@ if __name__ == "__main__":
     ap.add_argument("--input",
                     default="/data/sora/Medical_Reflection_Generation/data_with_bad/cxr-{000000..000007}.tar")
     ap.add_argument("--output",
-                    default= "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-%06d.tar")
+                    default= "/data/sora/Medical_Reflection_Generation/out3/ds_huatuo-%06d.tar")
     ap.add_argument("--model_path",
                     default='FreedomIntelligence/HuatuoGPT-Vision-34B')
     ap.add_argument("--shard_maxcount", type=int, default=2000)
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     ap.add_argument("--jpeg_quality", type=int, default=95)
     ap.add_argument("--resume", action="store_true",
                     help="启用断点续跑：跳过进度文件中已完成的 key")
-    ap.add_argument("--state_file", default="/data/sora/Medical_Reflection_Generation/out/ds_huatuo.state.jsonl",
+    ap.add_argument("--state_file", default="/data/sora/Medical_Reflection_Generation/out3/ds_huatuo.state.jsonl",
                     help="进度文件路径（默认：<output_stem>.state.jsonl）")
     args = ap.parse_args()
     run(args)
