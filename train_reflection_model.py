@@ -65,6 +65,6 @@ for batch in tqdm(dataloader):
     key = batch["key"]                # List[str]
 
     for i, text in enumerate(huatuo_text):
-        if 'Suggestions for improvement' not in text:
+        if '4.' not in text:
             print('key' + key[i])
             print('huatuo' + text)
