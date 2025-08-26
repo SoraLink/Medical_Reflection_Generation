@@ -4,12 +4,12 @@ from huggingface_hub import snapshot_download
 mix_dir = snapshot_download(
     repo_id="histai/HISTAI-mixed",
     repo_type="dataset",
-    local_dir="/data/HISTAI/HISTAI-mixed",
+    local_dir="./HISTAI/HISTAI-mixed",
 )
 
 # 下载元数据（包含 diagnosis / conclusion / icd10 等，并给出 case 到图像的映射）
 meta_dir = snapshot_download(
     repo_id="histai/HISTAI-metadata",
     repo_type="dataset",
-    local_dir="/data/HISTAI/HISTAI-metadata",
+    local_dir="./HISTAI/HISTAI-metadata",
 )
