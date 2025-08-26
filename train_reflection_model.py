@@ -12,10 +12,16 @@ def pil_loader(data):
 def json_loader(data):
     return json.loads(data.decode("utf-8"))
 
+def bytes_to_str(b):  # 用于 txt / “伪 json” 文本
+    return b.decode("utf-8")
+pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar"
 dataset = (
-    wds.WebDataset("/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar")
-    .decode()  # 自动解码常见格式（jpg, png, txt, json 等）
-    .to_tuple("real.png", "gen.png", "prompt.txt", "huatuo.json", "__key__")
+    wds.WebDataset(pattern, shardshuffle=False)
+    .decode("pil")  # 解图片即可
+    # 把 huatuo.json 重命名成 huatuo_txt（去掉 .json 扩展，避免被自动 json.loads）
+    .rename(huatuo_txt="huatuo.json")
+    .to_tuple("real.png", "gen.png", "prompt.txt", "huatuo_txt", "__key__")
+    .map_tuple(lambda x: x, lambda x: x, bytes_to_str, bytes_to_str, lambda x: x)
 )
 
 dataloader = DataLoader(dataset, batch_size=4, num_workers=2)
