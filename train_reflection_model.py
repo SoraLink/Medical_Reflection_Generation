@@ -9,10 +9,8 @@ import torchvision.transforms as T
 
 def _bytes_to_pil(x):
     if isinstance(x, bytes):
-        print('bytes')
         return Image.open(io.BytesIO(x)).convert("RGB")
     if isinstance(x, Image.Image):
-        print('image')
         return x
     if torch.is_tensor(x):
         return T.ToPILImage()(x)
@@ -57,9 +55,13 @@ def collate_fn(batch):
 
 dataloader = DataLoader(dataset, batch_size=8, num_workers=2, collate_fn=collate_fn)
 
-for real_img, gen_img, prompt_txt, huatuo_json, key in dataloader:
-    # real_img / gen_img / merged_img 都是解码过的 Tensor (decode() 时转的)
-    # prompt_txt 是 str，huatuo_json 是 dict
-    print(key, prompt_txt)
-    print(huatuo_json)
+for batch in dataloader:
+    real_img = batch["real"]          # Tensor [B,C,H,W]
+    gen_img  = batch["gen"]           # Tensor [B,C,H,W]
+    prompt_txt = batch["prompt"]      # List[str]，长度 B
+    huatuo_text = batch["reflection"] # List[str]
+    key = batch["key"]                # List[str]
+
+    print(key[0], prompt_txt[0])
+    print(huatuo_text[0])
     break
