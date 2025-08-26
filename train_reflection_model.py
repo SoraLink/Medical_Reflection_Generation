@@ -62,6 +62,7 @@ for batch in dataloader:
     huatuo_text = batch["reflection"] # List[str]
     key = batch["key"]                # List[str]
 
-    print(key[0], prompt_txt[0])
-    print(huatuo_text[0])
-    break
+    for i, text in enumerate(huatuo_text):
+        if 'Suggestions for improvement' not in text:
+            print('key' + key[i])
+            print('huatuo' + text)
