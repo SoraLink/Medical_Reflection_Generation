@@ -5,13 +5,30 @@ import json
 
 from PIL import Image
 from torch.utils.data import DataLoader
+import torchvision.transforms as T
 
+def _bytes_to_pil(x):
+    if isinstance(x, bytes):
+        print('bytes')
+        return Image.open(io.BytesIO(x)).convert("RGB")
+    if isinstance(x, Image.Image):
+        print('image')
+        return x
+    if torch.is_tensor(x):
+        return T.ToPILImage()(x)
+    raise TypeError(f"unexpected image type: {type(x)}")
 
-def load_img(b):
-    return Image.open(io.BytesIO(b)).convert("RGB")
+_img_tf = T.Compose([
+    T.Resize((512, 512)),   # 按需改尺寸
+    T.ToTensor(),           # -> float32 [0,1], CxHxW
+])
 
-def load_txt(b):
-    return b.decode("utf-8")
+def load_img(x):
+    return _img_tf(_bytes_to_pil(x))
+
+def load_txt(x):
+    return x if isinstance(x, str) else x.decode("utf-8")
+
 
 pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar"
 
