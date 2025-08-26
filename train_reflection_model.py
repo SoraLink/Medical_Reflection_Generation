@@ -6,6 +6,8 @@ import json
 from PIL import Image
 from torch.utils.data import DataLoader
 import torchvision.transforms as T
+from tqdm import tqdm
+
 
 def _bytes_to_pil(x):
     if isinstance(x, bytes):
@@ -55,7 +57,7 @@ def collate_fn(batch):
 
 dataloader = DataLoader(dataset, batch_size=8, num_workers=2, collate_fn=collate_fn)
 
-for batch in dataloader:
+for batch in tqdm(dataloader):
     real_img = batch["real"]          # Tensor [B,C,H,W]
     gen_img  = batch["gen"]           # Tensor [B,C,H,W]
     prompt_txt = batch["prompt"]      # List[str]，长度 B
