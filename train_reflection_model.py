@@ -1,3 +1,4 @@
+import torch
 import webdataset as wds
 import io
 import json
@@ -26,7 +27,18 @@ dataset = (
         lambda x: x        # __key__   -> str
     )
 )
-dataloader = DataLoader(dataset, batch_size=4, num_workers=2)
+
+def collate_fn(batch):
+    reals, gens, prompts, huatuos, keys = zip(*batch)
+    return {
+        "real": torch.stack(reals, dim=0),   # [B,C,H,W]
+        "gen":  torch.stack(gens,  dim=0),   # [B,C,H,W]
+        "prompt": list(prompts),             # List[str]
+        "reflection": list(huatuos),         # List[str]
+        "key": list(keys),                   # List[str]
+    }
+
+dataloader = DataLoader(dataset, batch_size=8, num_workers=2, collate_fn=collate_fn)
 
 for real_img, gen_img, prompt_txt, huatuo_json, key in dataloader:
     # real_img / gen_img / merged_img 都是解码过的 Tensor (decode() 时转的)
