@@ -15,13 +15,14 @@ def json_loader(data):
 def bytes_to_str(b):  # 用于 txt / “伪 json” 文本
     return b.decode("utf-8")
 pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar"
+
 dataset = (
-    wds.WebDataset(pattern, shardshuffle=False)
-    .decode("pil")  # 解图片即可
-    # 把 huatuo.json 重命名成 huatuo_txt（去掉 .json 扩展，避免被自动 json.loads）
-    .rename(huatuo_txt="huatuo.json")
+    wds.WebDataset("/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar",
+                   shardshuffle=False)
+    .decode("pil")  # 只解码图片
+    .rename(huatuo_txt="huatuo.json")  # 把 .json 改成 huatuo_txt
     .to_tuple("real.png", "gen.png", "prompt.txt", "huatuo_txt", "__key__")
-    .map_tuple(lambda x: x, lambda x: x, bytes_to_str, bytes_to_str, lambda x: x)
+    .map_tuple(lambda r, g, p, h, k: (r, g, p.decode("utf-8"), h.decode("utf-8"), k))
 )
 
 dataloader = DataLoader(dataset, batch_size=4, num_workers=2)
