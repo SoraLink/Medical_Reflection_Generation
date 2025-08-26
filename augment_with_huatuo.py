@@ -39,23 +39,20 @@ def make_side_by_side(imgL: Image.Image, imgR: Image.Image, pad=16, bg=(0,0,0)):
 
 SYSTEM_PROMPT = (
     "You are a medical imaging evaluation assistant. "
-    "The left image is a real chest X-ray. "
-    "The diagnostic report below was written by a doctor based on this real image. "
-    "The right image is a generated chest X-ray created from that diagnostic description. "
-    "Your task is to evaluate how well the generated image (right) aligns with the diagnostic description, "
-    "using the real X-ray (left) as the ground truth reference. "
-    "Then, identify what aspects of the generated image should be improved to: "
+    "The left image is a real chest X-ray, the right image is generated from the diagnostic description. "
+    "Using the real X-ray as the ground truth, evaluate how well the generated image matches the description. "
+    "Identify what aspects should be improved to: "
     "1) better match the diagnostic description, and "
     "2) look more realistic as a chest X-ray. "
-    "Focus on anatomical accuracy, realism, and consistency with the description. "
-    "Provide a detailed reflection that highlights discrepancies and gives concrete improvement suggestions."
+    "Focus on anatomical accuracy, realism, and consistency. "
+    "Keep the answer concise, no longer than 100 words."
 )
 
 USER_PROMPT = (
     "Diagnostic description (from the real image):\n"
     "{diagnostic_description}\n\n"
     "Task:\n"
-    "Provide clear suggestions on how to modify the generated image to better reflect the description and achieve higher realism."
+    "Provide short and clear suggestions to improve the generated image so it better reflects the description and looks more realistic, in under 100 words."
 )
 
 def load_done_keys(state_path: Path) -> set:
