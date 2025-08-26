@@ -55,10 +55,7 @@ USER_PROMPT = (
     "Diagnostic description (from the real image):\n"
     "{diagnostic_description}\n\n"
     "Task:\n"
-    "1. Compare the real chest X-ray (left), the diagnostic description, and the generated chest X-ray (right). "
-    "2. Assess whether the generated image matches the diagnostic description. "
-    "3. Point out areas where the generated image deviates from the description or appears unrealistic. "
-    "4. Provide clear suggestions on how to modify the generated image to better reflect the description and achieve higher realism."
+    "Provide clear suggestions on how to modify the generated image to better reflect the description and achieve higher realism."
 )
 
 def load_done_keys(state_path: Path) -> set:
