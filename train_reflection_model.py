@@ -256,18 +256,8 @@ def main():
 
     dataset_length = 0
     for batch in dataloader:
-        if isinstance(batch, dict):
-            # 拿第一列 tensor 的 batch size
-            bsz = next(iter(batch.values())).size(0)
-        elif isinstance(batch, (list, tuple)):
-            # 拿第一个元素的 batch size
-            bsz = batch[0].size(0) if torch.is_tensor(batch[0]) else len(batch[0])
-        elif torch.is_tensor(batch):
-            bsz = batch.size(0)
-        else:
-            raise TypeError(f"Unsupported batch type: {type(batch)}")
-
-        dataset_length += bsz
+        real_img = batch["real"]
+        dataset_length += real_img.shape[0]
     print("Total samples in dataloader:", dataset_length)
 
     num_update_steps_per_epoch = math.ceil(dataset_length)
