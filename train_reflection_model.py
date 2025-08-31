@@ -246,9 +246,9 @@ def main():
         return {
             "real": torch.stack(reals, dim=0),   # [B,C,H,W]
             "gen":  torch.stack(gens,  dim=0),   # [B,C,H,W]
-            "prompt": list(prompts),             # List[str]
+            # "prompt": list(prompts),             # List[str]
             "reflection": reflections.input_ids,
-            "key": list(keys),                   # List[str]
+            # "key": list(keys),                   # List[str]
         }
 
     batch_size = 16
@@ -328,9 +328,9 @@ def main():
             with accelerator.accumulate(controlnet):
                 real_img = batch["real"].to(device)          # Tensor [B,C,H,W]
                 gen_img  = batch["gen"].to(device)           # Tensor [B,C,H,W]
-                prompt_txt = batch["prompt"]      # List[str]，长度 B
+                # prompt_txt = batch["prompt"]      # List[str]，长度 B
                 reflection = batch["reflection"].to(device)
-                key = batch["key"]                # List[str]
+                # key = batch["key"]                # List[str]
 
                 with torch.no_grad():
                     latents = vae.encode(real_img).latent_dist.sample()
