@@ -141,9 +141,9 @@ def main():
     if args.seed is not None:
         set_seed(args.seed)
 
-    noise_scheduler = DDPMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
+    noise_scheduler = DDPMScheduler.from_pretrained(args.pretrained_model, subfolder="scheduler")
     tokenizer = CLIPTokenizer.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="tokenizer", revision=args.revision
+        args.pretrained_model, subfolder="tokenizer", revision=args.revision
     )
 
     def deepspeed_zero_init_disabled_context_manager():
@@ -158,13 +158,13 @@ def main():
 
     with ContextManagers(deepspeed_zero_init_disabled_context_manager()):
         text_encoder = CLIPTextModel.from_pretrained(
-            args.pretrained_model_name_or_path, subfolder="text_encoder", revision=args.revision
+            args.pretrained_model, subfolder="text_encoder", revision=args.revision
         )
         vae = AutoencoderKL.from_pretrained(
-            args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision
+            args.pretrained_model, subfolder="vae", revision=args.revision
         )
     unet = UNet2DConditionModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="unet", revision=args.non_ema_revision
+        args.pretrained_model, subfolder="unet", revision=args.non_ema_revision
     )
 
     controlnet = ControlNetModel.from_unet(unet)
