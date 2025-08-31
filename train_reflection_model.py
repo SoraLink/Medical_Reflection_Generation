@@ -126,7 +126,7 @@ def main():
             load_txt,          # prompt.txt-> str
             load_txt,          # huatuo.json(其实是纯文本)-> str
             lambda x: x        # __key__   -> str
-        ).pipe(wds.split_by_worker)
+        )
     )
 
     train_transforms = transforms.Compose(
