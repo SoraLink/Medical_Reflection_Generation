@@ -254,9 +254,14 @@ def main():
     batch_size = 16
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
 
-    dataset_length = 14279
+    global_samples = 14279
+    world_size = accelerator.num_processes
+    grad_accum = getattr(accelerator, "gradient_accumulation_steps", 1)
 
-    num_update_steps_per_epoch = math.ceil(dataset_length)
+    samples_per_rank = math.ceil(global_samples / world_size)
+    num_update_steps_per_epoch = math.ceil(
+        math.ceil(samples_per_rank / batch_size) / grad_accum
+    )
     max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
 
     lr_scheduler = get_scheduler(
@@ -277,7 +282,7 @@ def main():
     total_batch_size = batch_size * accelerator.num_processes
 
     logger.info("***** Running training *****")
-    logger.info(f"  Num examples = {dataset_length}")
+    logger.info(f"  Num examples = {global_samples}")
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {batch_size}")
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
@@ -312,19 +317,19 @@ def main():
 
     progress_bar = tqdm(
         range(0, max_train_steps),
-        inital=initial_global_step,
+        initial=initial_global_step,
         desc="Steps",
         disable=not accelerator.is_local_main_process
     )
 
-    for epoch in range(first_epoch, max_train_steps):
+    for epoch in range(first_epoch, args.num_train_epochs):
         train_loss = 0.0
         for step, batch in enumerate(dataloader):
             with accelerator.accumulate(controlnet):
-                real_img = batch["real"]          # Tensor [B,C,H,W]
-                gen_img  = batch["gen"]           # Tensor [B,C,H,W]
+                real_img = batch["real"].to(device)          # Tensor [B,C,H,W]
+                gen_img  = batch["gen"].to(device)           # Tensor [B,C,H,W]
                 prompt_txt = batch["prompt"]      # List[str]，长度 B
-                reflection = batch["reflection"]
+                reflection = batch["reflection"].to(device)
                 key = batch["key"]                # List[str]
 
                 with torch.no_grad():
@@ -354,7 +359,7 @@ def main():
 
                 if noise_scheduler.config.prediction_type == "epsilon":
                     target = noise
-                elif noise_scheduler.config.pprediction_type == "v_prediction":
+                elif noise_scheduler.config.prediction_type == "v_prediction":
                     target = noise_scheduler.get_velocity(latents, noise, timesteps)
                 else:
                     raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
