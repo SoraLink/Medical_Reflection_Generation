@@ -118,7 +118,11 @@ def main():
     pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar"
 
     dataset = (
-        wds.WebDataset(pattern, shardshuffle=False)   # 显式关掉分片shuffle
+        wds.WebDataset(
+            pattern,
+            nodesplitter=wds.split_by_node,
+            shardshuffle=False
+        )   # 显式关掉分片shuffle
         # 不要调用 .decode(...)，避免触发内置的 json 解码器
         .to_tuple("real.png", "gen.png", "prompt.txt", "huatuo.json", "__key__")
         .map_tuple(
