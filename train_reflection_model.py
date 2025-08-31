@@ -254,12 +254,7 @@ def main():
     batch_size = 16
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
 
-    dataset_length = 0
-    for i, batch in enumerate(dataloader):
-        real_img = batch["real"]
-        dataset_length += real_img.shape[0]
-        print(i)
-    print("Total samples in dataloader:", dataset_length)
+    dataset_length = 14279
 
     num_update_steps_per_epoch = math.ceil(dataset_length)
     max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
