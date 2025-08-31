@@ -126,7 +126,7 @@ def main():
             load_txt,          # prompt.txt-> str
             load_txt,          # huatuo.json(其实是纯文本)-> str
             lambda x: x        # __key__   -> str
-        )
+        ).pipe(wds.split_by_worker)
     )
 
     train_transforms = transforms.Compose(
@@ -255,10 +255,10 @@ def main():
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
 
     dataset_length = 0
-    for batch in dataloader:
+    for i, batch in enumerate(dataloader):
         real_img = batch["real"]
         dataset_length += real_img.shape[0]
-        print(real_img.shape)
+        print(i)
     print("Total samples in dataloader:", dataset_length)
 
     num_update_steps_per_epoch = math.ceil(dataset_length)
@@ -286,7 +286,7 @@ def main():
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {batch_size}")
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
-    logger.info(f"  Total optimization steps = {args.max_train_steps}")
+    logger.info(f"  Total optimization steps = {max_train_steps}")
 
     global_step = 0
     first_epoch = 0
@@ -322,7 +322,7 @@ def main():
         disable=not accelerator.is_local_main_process
     )
 
-    for epoch in range(first_epoch, initial_global_step):
+    for epoch in range(first_epoch, max_train_steps):
         train_loss = 0.0
         for step, batch in enumerate(dataloader):
             with accelerator.accumulate(controlnet):
@@ -370,6 +370,9 @@ def main():
                 train_loss += avg_loss.item()
 
                 accelerator.backward(loss)
+                optimizer.step()
+                lr_scheduler.step()
+                optimizer.zero_grad()
 
             if accelerator.sync_gradients:
                 if args.use_ema:
@@ -399,7 +402,7 @@ def main():
                                     removing_checkpoint = os.path.join(args.output_dir, removing_checkpoint)
                                     shutil.rmtree(removing_checkpoint)
                         save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
-                        accelerator.save(save_path)
+                        accelerator.save_state(save_path)
                         logger.info(f"Checkpoint saved to {save_path}")
             logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
             progress_bar.set_postfix(**logs)
@@ -414,7 +417,7 @@ def main():
                 ema_controlnet.copy_to(controlnet.parameters())
 
             pipeline = StableDiffusionControlNetPipeline.from_pretrained(
-                args.pretrained_model_name,
+                args.pretrained_model,
                 vae=vae,
                 text_encoder=text_encoder,
                 tokenizer=tokenizer,
