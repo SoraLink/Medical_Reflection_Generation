@@ -110,7 +110,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000010}.tar"
+    pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000007}.tar"
 
     dataset = (
         wds.WebDataset(
@@ -251,7 +251,7 @@ def main():
             "key": list(keys),                   # List[str]
         }
 
-    batch_size = 8
+    batch_size = 16
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
 
     dataset_length = 0
