@@ -255,7 +255,11 @@ def main():
     batch_size = 8
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
 
-    num_update_steps_per_epoch = math.ceil(len(dataloader))
+    dataset_length = 0
+    for _ in dataset:
+        dataset_length += 1
+
+    num_update_steps_per_epoch = math.ceil(dataset_length)
     max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
 
     lr_scheduler = get_scheduler(
@@ -276,7 +280,7 @@ def main():
     total_batch_size = batch_size * accelerator.num_processes
 
     logger.info("***** Running training *****")
-    logger.info(f"  Num examples = {len(dataset)}")
+    logger.info(f"  Num examples = {dataset_length}")
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {batch_size}")
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
