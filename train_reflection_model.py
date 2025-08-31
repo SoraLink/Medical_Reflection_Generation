@@ -45,13 +45,8 @@ def _bytes_to_pil(x):
         return T.ToPILImage()(x)
     raise TypeError(f"unexpected image type: {type(x)}")
 
-_img_tf = T.Compose([
-    T.Resize((512, 512)),   # 按需改尺寸
-    T.ToTensor(),           # -> float32 [0,1], CxHxW
-])
-
 def load_img(x):
-    return _img_tf(_bytes_to_pil(x))
+    return _bytes_to_pil(x)
 
 def load_txt(x):
     return x if isinstance(x, str) else x.decode("utf-8")
