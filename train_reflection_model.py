@@ -75,7 +75,7 @@ def parse_args():
     parser.add_argument("--adam_weight_decay", type=float, default=1e-2, help="Weight decay to use.")
     parser.add_argument("--adam_epsilon", type=float, default=1e-08, help="Epsilon value for the Adam optimizer")
     parser.add_argument("--modality", type=str, default="CXR", choices=["CXR"])
-    parser.add_argument("--num_train_epochs", type=int, default=30)
+    parser.add_argument("--num_train_epochs", type=int, default=5)
     parser.add_argument("--resume_from_checkpoint", type=str, default='latest')
 
     parser.add_argument(
