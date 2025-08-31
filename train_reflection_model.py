@@ -354,7 +354,7 @@ def main():
                 pred = unet(
                     noisy_latents, timesteps, encoder_hidden_states=encoder_hidden_states,
                     down_block_additional_residuals=down_res,
-                    mid_block_additional_residuals=mide_res
+                    mid_block_additional_residual=mide_res
                 ).sample
 
                 if noise_scheduler.config.prediction_type == "epsilon":
