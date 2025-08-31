@@ -100,6 +100,17 @@ def parse_args():
         help=("Max number of checkpoints to store."),
     )
 
+    parser.add_argument(
+        "--non_ema_revision",
+        type=str,
+        default=None,
+        required=False,
+        help=(
+            "Revision of pretrained non-ema model identifier. Must be a branch, tag or git identifier of the local or"
+            " remote repository specified with --pretrained_model_name_or_path."
+        ),
+    )
+
     return parser.parse_args()
 
 def main():
