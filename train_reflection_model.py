@@ -256,8 +256,9 @@ def main():
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
 
     dataset_length = 0
-    for _ in dataset:
-        dataset_length += 1
+    for batch in dataloader:
+        dataset_length += len(batch)
+    print("Total samples in dataloader:", dataset_length)
 
     num_update_steps_per_epoch = math.ceil(dataset_length)
     max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
