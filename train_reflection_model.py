@@ -258,6 +258,7 @@ def main():
     for batch in dataloader:
         real_img = batch["real"]
         dataset_length += real_img.shape[0]
+        print(real_img.shape)
     print("Total samples in dataloader:", dataset_length)
 
     num_update_steps_per_epoch = math.ceil(dataset_length)
