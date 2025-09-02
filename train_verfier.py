@@ -10,6 +10,7 @@ from typing import List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from qwen_vl_utils import process_vision_info
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import transforms
 from tqdm import tqdm
@@ -87,15 +88,33 @@ class QwenVLRewardModel(nn.Module):
         返回 r(x,y) 标量分数；不开启生成，仅前向拿 hidden_states。
         """
         # QwenVL 的 processor 会自动把多模态拼好
-        texts = [("<image>\n" + (t if isinstance(t, str) else str(t))) for t in texts]
+        text_inputs_batch = []
+        images_inputs_batch = []
+        videos_inputs_batch = []
+        for i, image in enumerate(images):
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": image},
+                        {"type": "text", "text": texts[i]},
+                    ],
+                }
+            ]
+            text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+            image_inputs, video_inputs = process_vision_info(messages)
+            text_inputs_batch.append(text)
+            images_inputs_batch.append(image_inputs)
+            videos_inputs_batch.append(video_inputs)
 
         batch = self.processor(
-            text=texts,
-            images=images,
+            text=text_inputs_batch,
+            images=images_inputs_batch,
+            videos=None,
             return_tensors="pt",
             padding=True,
         ).to(device)
-        out = self.model(**batch, output_hidden_states=True, use_cache=False)
+        out = self.model.generate(**batch, output_hidden_states=True, use_cache=False)
         hs = out.hidden_states[-1]                # [B, T, H]
         B, T, H = hs.shape
 
