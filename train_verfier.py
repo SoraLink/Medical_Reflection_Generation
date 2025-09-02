@@ -64,7 +64,7 @@ class QwenVLRewardModel(nn.Module):
         self.processor = AutoProcessor.from_pretrained(name, trust_remote_code=True)
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             name, trust_remote_code=True,
-            torch_dtype=torch.bfloat16 if bf16 else torch.float16,
+            torch_dtype=torch.float32,
             low_cpu_mem_usage=True
         )
         hidden = self.model.config.hidden_size
