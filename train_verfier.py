@@ -57,7 +57,7 @@ class QwenVLRewardModel(nn.Module):
     用 Qwen2.5-VL-3B 做骨干，在前向里做多模态融合；
     取最后一层 hidden_state 的“最后非 PAD token”向量作为 pooled，再接一个 MLP -> 标量。
     """
-    def __init__(self, name="Qwen/Qwen2.5-VL-3B", lora_r=16, lora_alpha=32, lora_dropout=0.05,
+    def __init__(self, name="Qwen/Qwen2.5-VL-3B-Instruct", lora_r=16, lora_alpha=32, lora_dropout=0.05,
                  lora_on_lang=True, unfreeze_vision=True, bf16=True):
         super().__init__()
         self.processor = AutoProcessor.from_pretrained(name, trust_remote_code=True)
