@@ -87,18 +87,11 @@ class QwenVLRewardModel(nn.Module):
         返回 r(x,y) 标量分数；不开启生成，仅前向拿 hidden_states。
         """
         # QwenVL 的 processor 会自动把多模态拼好
-        messages = [
-            [
-                {"role": "user",
-                 "content": [
-                     {"type": "image", "image": img},
-                     {"type": "text", "text": txt},
-                 ]}
-            ]
-            for img, txt in zip(images, texts)
-        ]
+        texts = [("<image>\n" + (t if isinstance(t, str) else str(t))) for t in texts]
+
         batch = self.processor(
-            messages=messages,
+            text=texts,
+            images=images,
             return_tensors="pt",
             padding=True,
         ).to(device)
