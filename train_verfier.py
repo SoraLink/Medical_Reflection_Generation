@@ -143,7 +143,6 @@ def main():
         ds = wds.WebDataset(
             pattern,
             nodesplitter=nodesplitter,  # 训练放开；验证用 None
-            splitter=wds.split_by_worker,  # 同机多 worker 去重
             shardshuffle=False
         )
         if do_shuffle:
