@@ -114,7 +114,7 @@ class QwenVLRewardModel(nn.Module):
             return_tensors="pt",
             padding=True,
         ).to(device)
-        out = self.model.generate(**batch, output_hidden_states=True, use_cache=False)
+        out = self.model(**batch, output_hidden_states=True, use_cache=False)
         hs = out.hidden_states[-1]                # [B, T, H]
         B, T, H = hs.shape
 
