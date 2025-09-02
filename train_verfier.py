@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from transformers import (
     AutoProcessor, AutoModelForCausalLM,
-    get_cosine_schedule_with_warmup
+    get_cosine_schedule_with_warmup, Qwen2_5_VLForConditionalGeneration
 )
 import torchvision.transforms as T
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, PeftModel
@@ -61,7 +61,7 @@ class QwenVLRewardModel(nn.Module):
                  lora_on_lang=True, unfreeze_vision=True, bf16=True):
         super().__init__()
         self.processor = AutoProcessor.from_pretrained(name, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             name, trust_remote_code=True,
             torch_dtype=torch.bfloat16 if bf16 else torch.float16,
             low_cpu_mem_usage=True
