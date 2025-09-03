@@ -270,7 +270,7 @@ def main():
             pbar.set_postfix(loss=f"{loss_bt.item():.4f}", acc=f"{pairwise_acc(sw, sl):.3f}",
                              lr=f"{optim.param_groups[0]['lr']:.2e}")
 
-        if val_loader:
+
             model.eval()
             vs, va = [], []
             with torch.no_grad():
