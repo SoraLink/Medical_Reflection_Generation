@@ -273,17 +273,17 @@ def main():
 
             model.eval()
             vs, va = [], []
-            with torch.no_grad():
-                for prompts, wins, loss in tqdm(val_loader, desc="Valid"):
-                    sw = model.forward_score(wins, prompts, device)
-                    sl = model.forward_score(loss, prompts, device)
-                    vs.append(bt_loss(sw, sl).item())
-                    va.append(pairwise_acc(sw, sl))
-            mv, ma = sum(vs)/len(vs), sum(va)/len(va)
-            print(f"[Val] loss={mv:.4f} acc={ma:.4f}")
-            if ma > best_val:
-                best_val = ma
-                save_raw(model, args.save_dir, tag=f"best_raw_{best_val:.4f}")
+        with torch.no_grad():
+            for prompts, wins, loss in tqdm(val_loader, desc="Valid"):
+                sw = model.forward_score(wins, prompts, device)
+                sl = model.forward_score(loss, prompts, device)
+                vs.append(bt_loss(sw, sl).item())
+                va.append(pairwise_acc(sw, sl))
+        mv, ma = sum(vs)/len(vs), sum(va)/len(va)
+        print(f"[Val] loss={mv:.4f} acc={ma:.4f}")
+        if ma > best_val:
+            best_val = ma
+            save_raw(model, args.save_dir, tag=f"best_raw_{best_val:.4f}")
 
     def merge_from_disk(save_root, src_tag, dst_tag="best_merged"):
         src = os.path.join(save_root, src_tag)
