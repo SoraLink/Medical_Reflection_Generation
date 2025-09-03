@@ -241,7 +241,7 @@ def main():
     total_steps = args.epochs * steps_per_epoch
     sched = get_cosine_schedule_with_warmup(optim, num_warmup_steps=args.warmup_steps, num_training_steps=total_steps)
 
-    best_val = 0.8200
+    best_val = -1.0
 
     def save_raw(model_wrapper, save_root, tag):
         ckpt = os.path.join(save_root, tag)
