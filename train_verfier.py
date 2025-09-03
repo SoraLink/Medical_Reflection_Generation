@@ -289,7 +289,7 @@ def main():
         src = os.path.join(save_root, src_tag)
         dst = os.path.join(save_root, dst_tag)
         os.makedirs(dst, exist_ok=True)
-        base = AutoModelForCausalLM.from_pretrained(os.path.join(src, "base"), trust_remote_code=True,
+        base = Qwen2_5_VLForConditionalGeneration.from_pretrained(os.path.join(src, "base"), trust_remote_code=True,
                                                     torch_dtype=torch.float32)
         peft = PeftModel.from_pretrained(base, os.path.join(src, "adapter"))
         merged = peft.merge_and_unload()
