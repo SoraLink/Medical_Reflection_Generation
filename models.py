@@ -76,7 +76,7 @@ class Reflection:
             torch_dtype=torch.float32,
             safety_checker=None, requires_safety_checker=False
         ).to("cuda:0")
-        reflection_path = './output/reflection'
+        reflection_path = './controlnet'
         self.reflection_pipe = StableDiffusionControlNetPipeline.from_pretrained(
             reflection_path,
             torch_dtype=torch.float32,
