@@ -123,7 +123,7 @@ class Reflection:
                     diagnostic_description=diag_prompt
                 )
                 # 传入当前图 + 描述，让huatuo给出修改建议文本
-                out_text = self.huatuo.inference(query, reflection_images[idx])
+                out_text = self.huatuo.inference(query, [reflection_images[idx]])
                 reflections.append(out_text)
 
             # 3) 用 reflection 文本 + 当前图 作为条件，生成下一轮图
