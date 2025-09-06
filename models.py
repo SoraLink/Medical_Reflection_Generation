@@ -10,13 +10,20 @@ from PIL import Image
 from accelerate import Accelerator
 from dalle_pytorch import VQGanVAE, DALLE
 from datasets import load_dataset
-from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler
+from diffusers import StableDiffusionPipeline, UNet2DConditionModel, EMAModel, get_scheduler, \
+    StableDiffusionControlNetPipeline
 import torch.nn.functional as F
 from imagen_pytorch import Unet, Imagen, ImagenTrainer, load_imagen_from_checkpoint, ElucidatedImagen
 from dalle_pytorch.tokenizer import tokenizer
 from packaging import version
 from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
+from cli import HuatuoChatbot  # HuatuoGPT-Vision 官方提供的推理类
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, PeftModel
+from qwen_vl_utils import process_vision_info
+import torch.nn as nn
+
 
 
 class MINIM:
@@ -56,8 +63,191 @@ def build_model(modal, model_path, model, device):
         return ImagenModel(model_path, device)
     elif model == 'dalle':
         return DALLEModel(model_path, device)
+    elif model == 'reflection':
+        return Reflection()
     else:
         raise NotImplementedError
+
+class Reflection:
+    def __init__(self):
+        deffusion_path = './output'
+        self.diffusion_pipe = StableDiffusionPipeline.from_pretrained(
+            deffusion_path,
+            torch_dtype=torch.float32,
+            safety_checker=None, requires_safety_checker=False
+        ).to("cuda:0")
+        reflection_path = './output/reflection'
+        self.reflection_pipe = StableDiffusionControlNetPipeline.from_pretrained(
+            reflection_path,
+            torch_dtype=torch.float32,
+            safety_checker=None, requires_safety_checker=False
+        ).to("cuda:1")
+        huatuo_path = 'FreedomIntelligence/HuatuoGPT-Vision-34B'
+        self.huatuo = HuatuoChatbot(
+            huatuo_path,
+            device_map={"": 3},
+        )
+        verifier_path = './bt_verifier_qwenvl/best_merged_1.0000'
+        self.verifier = QwenVLVerifier(verifier_path)
+        self.SYSTEM_PROMPT = (
+            "You are a medical imaging evaluation assistant. "
+            "You are given a generated chest X-ray image and its diagnostic description. "
+            "Your task is to analyze the generated image against the description and provide concise reflection: "
+            "what aspects should be improved to make the image 1) better match the diagnostic description, and "
+            "2) look more realistic as a chest X-ray. "
+            "Focus on anatomical accuracy, realism, and consistency. "
+            "Keep the answer concise, no longer than 100 words."
+        )
+
+        self.USER_PROMPT = (
+            "Diagnostic description:\n"
+            "{diagnostic_description}\n\n"
+            "Task:\n"
+            "Provide short and clear suggestions to improve the generated image so it better reflects the description "
+            "and looks more realistic, in under 100 words."
+        )
+
+    def __call__(self, prompts, num_inference_steps, num_reflection_steps=20):
+        # 1) 初次生成
+        generated_images = self.diffusion_pipe(
+            prompt=prompts,
+            num_inference_steps=num_inference_steps
+        ).images  # List[PIL.Image]
+        reflection_images = generated_images  # 当前候选
+        best_scores = self.verifier.score(reflection_images, prompts)  # List[float]
+
+        for step in range(num_reflection_steps):
+            # 2) 为每张图生成一条 reflection 文本（作为下一轮的 prompt）
+            reflections = []
+            for idx, diag_prompt in enumerate(prompts):
+                query = (self.SYSTEM_PROMPT + "\n" + self.USER_PROMPT).format(
+                    diagnostic_description=diag_prompt
+                )
+                # 传入当前图 + 描述，让huatuo给出修改建议文本
+                out_text = self.huatuo.inference(query, reflection_images[idx])
+                reflections.append(out_text)
+
+            # 3) 用 reflection 文本 + 当前图 作为条件，生成下一轮图
+            next_output = self.reflection_pipe(
+                prompt=reflections,  # 新的文本（修改建议）
+                image=reflection_images,  # 直接喂上一轮图做ControlNet条件
+                num_inference_steps=num_inference_steps,
+                controlnet_conditioning_scale=1.0,
+                guidance_scale=7.5
+            )
+            next_reflection_images = next_output.images  # 取出图像列表
+
+            # 4) 打分并逐个选择更优的图
+            next_scores = self.verifier.score(next_reflection_images, prompts)  # List[float]
+
+            updated_images = []
+            for idx in range(len(prompts)):
+                if next_scores[idx] > best_scores[idx]:
+                    updated_images.append(next_reflection_images[idx])
+                    best_scores[idx] = next_scores[idx]
+                else:
+                    updated_images.append(reflection_images[idx])
+
+            reflection_images = updated_images
+
+        # 返回最终图、分数、最后一轮的reflection文本（可选）
+        return reflection_images
+
+
+class QwenVLVerifier:
+    def __init__(self, ckpt_dir, device="cuda:2"):
+        self.device = device
+
+        base_dir = os.path.join(ckpt_dir, "base")
+        proc_dir = os.path.join(ckpt_dir, "processor")
+        head_path = os.path.join(ckpt_dir, "head.pt")
+
+        # 加载已合并的基座
+        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            base_dir, trust_remote_code=True, torch_dtype=torch.float32, low_cpu_mem_usage=True
+        ).to(self.device)
+        self.model.eval()
+        # 加载处理器
+        self.processor = AutoProcessor.from_pretrained(proc_dir, trust_remote_code=True)
+
+        # 加载标量头
+        hidden = self.model.config.hidden_size
+        self.head = ScalarHead(hidden).to(self.device)
+        self.head.load_state_dict(torch.load(head_path, map_location="cpu"))
+        self.head.eval()
+
+    @torch.no_grad()
+    def _score_batch(self, images, texts):
+        """
+        images: List[PIL.Image.Image 或 URL/base64（与训练一致）]
+        texts:  List[str]
+        return: Tensor [B]，每个样本的标量分数
+        """
+        # 构造与训练同样的 chat 格式
+        text_inputs_batch, images_inputs_batch = [], []
+        for i, img in enumerate(images):
+            messages = [{
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": img},
+                    {"type": "text", "text": texts[i]},
+                ],
+            }]
+            text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+            image_inputs, _ = process_vision_info(messages)
+            text_inputs_batch.append(text)
+            images_inputs_batch.append(image_inputs)
+
+        batch = self.processor(
+            text=text_inputs_batch,
+            images=images_inputs_batch,
+            videos=None,
+            return_tensors="pt",
+            padding=True,
+        ).to(self.device)
+
+
+        out = self.model(**batch, output_hidden_states=True, use_cache=False)
+        hs = out.hidden_states[-1]  # [B, T, H]
+        B, T, H = hs.shape
+        attn = batch.get("attention_mask", None)
+        if attn is not None:
+            idx = attn.to(torch.int64).sum(dim=-1) - 1
+        elif "input_ids" in batch and getattr(self.model.config, "pad_token_id", None) is not None:
+            pad_id = self.model.config.pad_token_id
+            idx = (batch["input_ids"] != pad_id).to(torch.int64).sum(dim=-1) - 1
+        else:
+            idx = torch.full((B,), T - 1, device=hs.device, dtype=torch.long)
+        idx = idx.clamp(min=0, max=T - 1)
+        pooled = hs[torch.arange(B, device=hs.device), idx]  # [B, H]
+        score = self.head(pooled)  # [B]
+        return score
+
+    # 单样本打分
+    def score(self, images, texts):
+        scores = self._score_batch(images, texts)
+        return scores.detach().cpu().tolist()
+
+        # 成对比较（如训练里的“win vs lose”）
+    def compare(self, image_win, image_lose, prompt):
+        sw, sl = self._score_batch([image_win, image_lose], [prompt, prompt])
+        return {
+            "score_win": float(sw.item()),
+            "score_lose": float(sl.item()),
+            "prefers_win": bool(sw.item() > sl.item()),
+            "margin": float((sw - sl).item()),
+        }
+
+class ScalarHead(nn.Module):
+    def __init__(self, hidden_size):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.GELU(),
+            nn.Linear(hidden_size, 1),
+        )
+    def forward(self, pooled):
+        return self.mlp(pooled).squeeze(-1)
 
 class Diffusion:
 

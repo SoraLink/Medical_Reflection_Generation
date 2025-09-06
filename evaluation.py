@@ -117,7 +117,7 @@ def evaluate(args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, choices=['minim', 'diffusion', 'imagen', 'dalle'], default='minim')
+    parser.add_argument('--model', type=str, choices=['minim', 'diffusion', 'imagen', 'dalle', 'reflection'], default='minim')
     parser.add_argument('--modality', type=str, choices=['CXR', 'ChestCT'], default='CXR')
     parser.add_argument('--weight_path', type=str)
     parser.add_argument('--device', type=str, default='cuda:0')
