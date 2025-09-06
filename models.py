@@ -75,7 +75,7 @@ class Reflection:
             deffusion_path,
             torch_dtype=torch.float32,
             safety_checker=None, requires_safety_checker=False
-        ).to("cuda:0")
+        ).to("cuda:3")
         reflection_path = './controlnet'
         self.reflection_pipe = StableDiffusionControlNetPipeline.from_pretrained(
             reflection_path,
@@ -85,7 +85,6 @@ class Reflection:
         huatuo_path = 'FreedomIntelligence/HuatuoGPT-Vision-34B'
         self.huatuo = HuatuoChatbot(
             huatuo_path,
-            device_map={"": 3},
         )
         verifier_path = './bt_verifier_qwenvl/best_merged_1.0000'
         self.verifier = QwenVLVerifier(verifier_path)
