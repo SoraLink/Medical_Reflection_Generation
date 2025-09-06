@@ -20,7 +20,6 @@ from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
 from cli import HuatuoChatbot  # HuatuoGPT-Vision 官方提供的推理类
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, PeftModel
 from qwen_vl_utils import process_vision_info
 import torch.nn as nn
 
