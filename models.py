@@ -1,10 +1,12 @@
 import copy
+import io
 import os.path
 import random
 from pathlib import Path
 from typing import List
 
 import accelerate
+import requests
 import torch
 from PIL import Image
 from accelerate import Accelerator
@@ -18,7 +20,6 @@ from dalle_pytorch.tokenizer import tokenizer
 from packaging import version
 from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
-from cli import HuatuoChatbot  # HuatuoGPT-Vision 官方提供的推理类
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 import torch.nn as nn
@@ -81,10 +82,7 @@ class Reflection:
             torch_dtype=torch.float32,
             safety_checker=None, requires_safety_checker=False
         ).to("cuda:1")
-        huatuo_path = 'FreedomIntelligence/HuatuoGPT-Vision-34B'
-        self.huatuo = HuatuoChatbot(
-            huatuo_path,
-        )
+        self.huatuo = Huatuo()
         verifier_path = './bt_verifier_qwenvl/best_merged_1.0000'
         self.verifier = QwenVLVerifier(verifier_path)
         self.SYSTEM_PROMPT = (
@@ -122,7 +120,7 @@ class Reflection:
                     diagnostic_description=diag_prompt
                 )
                 # 传入当前图 + 描述，让huatuo给出修改建议文本
-                out_text = self.huatuo.inference(query, [reflection_images[idx]])
+                out_text = self.huatuo.inference(query, reflection_images[idx])
                 reflections.append(out_text)
 
             # 3) 用 reflection 文本 + 当前图 作为条件，生成下一轮图
@@ -150,6 +148,26 @@ class Reflection:
 
         # 返回最终图、分数、最后一轮的reflection文本（可选）
         return reflection_images
+
+class Huatuo:
+    def __init__(self):
+        self.server = "http://127.0.0.1:6006/inference"
+
+    def inference(self, prompt: str, pil_image) -> str:
+        if pil_image is None:
+            raise ValueError("Pil image cannot be None")
+
+        buf = io.BytesIO
+        pil_image.save(buf, "JPEG", quality=95)
+        buf.seek(0)
+        files = {'image': ("img.jpg", buf.getvalue(), "image/jpeg")}
+        resp = requests.post(self.server, data={"prompt": prompt}, files=files, timeout=180)
+
+        resp.raise_for_status()
+        j = resp.json()
+        if not j.get("ok", False):
+            raise RuntimeError(j.get("error"))
+        return j['text']
 
 
 class QwenVLVerifier:
