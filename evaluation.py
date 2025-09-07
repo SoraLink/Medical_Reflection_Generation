@@ -44,7 +44,7 @@ def get_cxr_loader(args):
                 real_images.append(item["image"].convert("RGB"))
                 prompts.append(prompt)
         return real_images, prompts
-    loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn)
+    loader = DataLoader(test_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn)
     return loader
 
 def get_ct_rate_loader(args):
