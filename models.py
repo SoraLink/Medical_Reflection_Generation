@@ -167,6 +167,7 @@ class Huatuo:
         j = resp.json()
         if not j.get("ok", False):
             raise RuntimeError(j.get("error"))
+        print(j['text'])
         return j['text']
 
 

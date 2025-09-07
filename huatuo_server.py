@@ -61,6 +61,7 @@ async def inference(
             out_text = out[0]
         else:
             out_text = str(out)
+        print(out_text)
         return {"ok": True, "text": out_text}
     except Exception as e:
         return JSONResponse({"ok": False, "error": repr(e)}, status_code=500)
