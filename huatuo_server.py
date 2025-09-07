@@ -18,8 +18,15 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
 
 app = FastAPI(title="Huatuo Inference Service", version="0.1")
 
-# 初始化一次（进程级别）
-BOT = HuatuoChatbot("FreedomIntelligence/HuatuoGPT-Vision-34B")
+BOT = None
+
+@app.on_event("startup")
+def _init_bot():
+    global BOT
+    if BOT is None:
+        os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+        from cli import HuatuoChatbot
+        BOT = HuatuoChatbot("FreedomIntelligence/HuatuoGPT-Vision-34B")
 
 def _bytes_to_tempfile(img_bytes) -> str:
     img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
@@ -63,4 +70,4 @@ async def inference(
 
 if __name__ == "__main__":
     # 可换成 0.0.0.0:6006 供远程用；workers=1 确保独占GPU
-    uvicorn.run("huatuo_server:app", host="127.0.0.1", port=6006, reload=False, workers=1)
+    uvicorn.run(app, host="127.0.0.1", port=6006, reload=False, workers=1)
