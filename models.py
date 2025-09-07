@@ -157,7 +157,7 @@ class Huatuo:
         if pil_image is None:
             raise ValueError("Pil image cannot be None")
 
-        buf = io.BytesIO
+        buf = io.BytesIO()
         pil_image.save(buf, "JPEG", quality=95)
         buf.seek(0)
         files = {'image': ("img.jpg", buf.getvalue(), "image/jpeg")}
