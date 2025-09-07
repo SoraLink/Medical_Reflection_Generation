@@ -114,6 +114,7 @@ class Reflection:
 
         for step in range(num_reflection_steps):
             # 2) 为每张图生成一条 reflection 文本（作为下一轮的 prompt）
+            print("Reflection step", step)
             reflections = []
             for idx, diag_prompt in enumerate(prompts):
                 query = (self.SYSTEM_PROMPT + "\n" + self.USER_PROMPT).format(
