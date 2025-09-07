@@ -150,6 +150,7 @@ class Reflection:
                 if next_scores[idx] > best_scores[idx]:
                     updated_images.append(next_reflection_images[idx])
                     best_scores[idx] = next_scores[idx]
+                    print(True)
                 else:
                     updated_images.append(reflection_images[idx])
 
