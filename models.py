@@ -123,6 +123,14 @@ class Reflection:
                 out_text = self.huatuo.inference(query, reflection_images[idx])
                 reflections.append(out_text)
 
+            def clip_trim(pipe, text: str, max_tokens: int = 75) -> str:
+                tok = pipe.tokenizer
+                ids = tok(text, truncation=True, max_length=max_tokens, add_special_tokens=True)["input_ids"]
+                return tok.decode(ids, skip_special_tokens=True).strip()
+
+            # 你的循环里这样用（没有 <|endoftext|> 清理步骤）
+            reflections = [clip_trim(self.reflection_pipe, t, 75) for t in reflections]
+
             # 3) 用 reflection 文本 + 当前图 作为条件，生成下一轮图
             next_output = self.reflection_pipe(
                 prompt=reflections,  # 新的文本（修改建议）
