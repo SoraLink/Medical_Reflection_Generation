@@ -103,9 +103,10 @@ def fix_case_prefix(case_prefix: str) -> str:
     return case_prefix
 
 def main(args):
-    df = pd.read_json(r"D:\Experiment\Medical_Reflection_Generation\HISTAI\HISTAI-metadata\metadata.json")
+    ds = load_dataset("histai/HISTAI-metadata", split="train")
 
     # 强制所有列转成 string
+    df = ds.to_pandas()
     df = df.astype(str)
     df = df.sort_values(by="case_mapping").reset_index(drop=True)
 
@@ -136,5 +137,5 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--saved_path', type=str, default='./data_histai/')
+    parser.add_argument('--saved_path', type=str, default='./data_histai/train/')
     main(parser.parse_args())
