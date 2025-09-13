@@ -136,5 +136,5 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--saved_path', type=str, default='./data_histai/train/')
+    parser.add_argument('--saved_path', type=str, default='./data_histai/')
     main(parser.parse_args())
