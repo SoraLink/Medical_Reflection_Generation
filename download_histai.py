@@ -104,6 +104,7 @@ def fix_case_prefix(case_prefix: str) -> str:
 
 def main(args):
     df = pd.read_json(r"/data/sora/Medical_Reflection_Generation/HISTAI/HISTAI-metadata/metadata.json")
+    # df = pd.read_json(r"D:\Experiment\Medical_Reflection_Generation\HISTAI\HISTAI-metadata\metadata.json")
 
     # 强制所有列转成 string
     df = df.astype(str)
@@ -123,7 +124,9 @@ def main(args):
     for data in tqdm(ds):
         out_root = Path(args.saved_path)
         case_prefix = data["case_mapping"].split("/")[-1]
-        case_prefix = fix_case_prefix(case_prefix)
+        dataset_name = data["case_mapping"].split("/")[-2]
+        if dataset_name != "HISTAI-mixed":
+            continue
         img_rel = f"images/{case_prefix}_512.jpg"
         img_abs = out_root / img_rel
         if img_abs.exists():
