@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -26,13 +27,20 @@ def download_wsi_from_case_mapping(case_prefix: str, saved_path: str, files, rep
     saved_path = Path(saved_path)
     saved_path = Path("tiff") / saved_path
     saved_path.mkdir(parents=True, exist_ok=True)
-    lp = Path(hf_hub_download(
-        repo_id=repo_id,
-        filename=cand[0],
-        local_dir=saved_path,
-        repo_type="dataset"
-    ))
-    return lp
+    while True:  # 无限重试
+        try:
+            lp = Path(
+                hf_hub_download(
+                    repo_id=repo_id,
+                    filename=cand[0],
+                    local_dir=saved_path,
+                    repo_type="dataset"
+                )
+            )
+            return lp
+        except Exception as e:
+            print(f"Download failed: {e}. Retrying in 5 seconds...")
+            time.sleep(5)
 
 
 def tiff_to_512(tiff_path: str | Path, mode: str = "fit"):
