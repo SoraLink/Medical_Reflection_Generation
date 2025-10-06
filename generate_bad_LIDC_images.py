@@ -523,20 +523,26 @@ if __name__ == "__main__":
     )
 
     CT_DESCRIPTION_SYSTEM_PROMPT = (
-        "You are a professional radiologist trained in thoracic imaging. "
-        "Your task is to describe a single axial CT slice of the chest in clear, precise, and radiologically accurate terms. "
-        "Focus on anatomical structures (lungs, heart, mediastinum, pleura, bones), tissue density, and any pathological findings. "
-        "Avoid non-visual speculation or diagnostic interpretation; describe only what is visually observable in the slice. "
-        "Keep the answer concise, no longer than 100 words."
+        "You are a board-certified thoracic radiologist specializing in lung CT interpretation. "
+        "You are reviewing a single axial CT slice from the LIDC-IDRI dataset. "
+        "This image contains at least one radiologist-annotated pulmonary nodule, whose approximate 3D bounding box is provided. "
+        "Your task is to generate a concise, visually grounded radiological description focusing on the nodule’s appearance. "
+        "Describe only what is visible: the nodule’s position within the lung, shape, margin definition, internal density (solid, part-solid, or ground-glass), "
+        "and relationship to nearby anatomy (bronchi, vessels, pleura). "
+        "Do not infer clinical significance or diagnosis. "
+        "Keep the language professional, objective, and under 100 words."
     )
 
     CT_DESCRIPTION_USER_PROMPT = (
-        "Provide a professional radiological description of a single axial CT slice of the chest. "
-        "Include details such as lung fields, parenchymal patterns, airway structures, mediastinal organs, pleural spaces, "
-        "and visible bony structures. "
-        "The description should read naturally as a radiology report sentence, focusing on visual features only. "
-        "Do not include measurement units, DICOM parameters, or patient identifiers."
+        "This axial CT slice of the chest (from the LIDC-IDRI dataset) contains a visible pulmonary nodule. "
+        "The annotated nodule region is located within the bounding box coordinates: {bbox_coordinates}. "
+        "Describe the nodule in professional radiological terms, including its location within the lung (e.g., right upper lobe, peripheral vs. central), "
+        "its size and shape (round, oval, irregular), margin characteristics (smooth, lobulated, spiculated), "
+        "and internal attenuation (solid, part-solid, or ground-glass). "
+        "Optionally, mention nearby anatomical structures if relevant (e.g., adjacent vessels, pleural surface). "
+        "Avoid diagnostic interpretations or non-visual assumptions. Keep the report concise and factual."
     )
+
     uid = 0
 
     huatuo_bot = Huatuo()
@@ -555,10 +561,21 @@ if __name__ == "__main__":
             for anns in clusters:
                 cons_mask, indv_masks, cbbox, origin = consensus(anns, clevel=0.5)
                 # 获取这个 annotation 的 bounding box
-                zsl, ysl, xsl = cbbox
-                vol_crop = vol[zsl]  # 截取对应体素块
-                hu_slices = [vol_crop[i] for i in range(vol_crop.shape[0])]
-                mask_slices = [(cons_mask[i] > 0).astype(np.uint8) for i in range(cons_mask.shape[0])]
+                x0, x1 = cbbox[0]  # inclusive start / stop
+                y0, y1 = cbbox[1]
+                z0, z1 = cbbox[2]
+                bbox_str = f"(x0={x0}, x1={x1}, y0={y0}, y1={y1})"
+                vol_crop = vol[:, :, z0:z1 + 1]  # 截取对应体素块
+                H, W, Dz = vol_crop.shape
+                h2, w2, Dz2 = cons_mask.shape
+                mask_full = np.zeros((H, W, Dz), dtype=np.uint8)
+
+                for k in range(Dz):
+                    mask_full[x0: x0 + h2, y0: y0 + w2, k] = (cons_mask[:, :, k] > 0).astype(np.uint8)
+
+                non_empty_indices = [i for i in range(Dz) if mask_full[:, :, i].any()]
+                hu_slices = [vol_crop[:, :, i] for i in non_empty_indices]
+                mask_slices = [mask_full[:, :, i] for i in non_empty_indices]
 
                 # 2) 构建 Dataset
                 dataset = LIDCSlicePairDataset(
@@ -574,7 +591,8 @@ if __name__ == "__main__":
                     if args.resume and key in done_keys:
                         uid += 1
                         continue
-                    ct_description_prompt = CT_DESCRIPTION_SYSTEM_PROMPT + "\n" + CT_DESCRIPTION_USER_PROMPT
+                    ct_description_prompt = (CT_DESCRIPTION_SYSTEM_PROMPT + "\n" + CT_DESCRIPTION_USER_PROMPT).format(bbox_coordinates=bbox_str)
+                    print(ct_description_prompt)
                     real_img01 = data["image_clean"].numpy().squeeze(0)  # [0,1], HxW
                     real_img8 = (real_img01 * 255).clip(0, 255).astype(np.uint8)
                     degraded_img01 = data["image_degraded"].numpy().squeeze(0)
