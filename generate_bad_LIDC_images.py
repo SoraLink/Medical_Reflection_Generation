@@ -626,11 +626,11 @@ if __name__ == "__main__":
             for anns in clusters:
                 cons_mask, cbbox, _ = consensus(anns, clevel=0.5)
                 # 获取这个 annotation 的 bounding box
-                x0, x1 = cbbox[0]  # inclusive start / stop
-                y0, y1 = cbbox[1]
-                z0, z1 = cbbox[2]
+                x0, x1 = cbbox[0].start, cbbox[0].stop  # inclusive start / stop
+                y0, y1 = cbbox[1].start, cbbox[1].stop
+                z0, z1 = cbbox[2].start, cbbox[2].stop
                 bbox_str = f"(x0={x0}, x1={x1}, y0={y0}, y1={y1})"
-                vol_crop = vol[:, :, z0:z1 + 1]  # 截取对应体素块
+                vol_crop = vol[:, :, z0:z1]  # 截取对应体素块
                 H, W, Dz = vol_crop.shape
                 h2, w2, Dz2 = cons_mask.shape
                 mask_full = np.zeros((H, W, Dz), dtype=np.uint8)
