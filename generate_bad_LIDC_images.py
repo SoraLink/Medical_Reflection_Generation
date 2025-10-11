@@ -663,7 +663,7 @@ if __name__ == "__main__":
                     real_img8 = (real_img01 * 255).clip(0, 255).astype(np.uint8)
                     degraded_img01 = data["image_degraded"].numpy().squeeze(0)
                     degraded_img8 = (degraded_img01 * 255).clip(0, 255).astype(np.uint8)
-                    diagnostic_description = huatuo_bot.inference(ct_description_prompt, real_img8)
+                    diagnostic_description = huatuo_bot.inference(ct_description_prompt, Image.fromarray(real_img8))
                     real_img = Image.fromarray(real_img8)
                     degraded_img = Image.fromarray(degraded_img8)
                     merged_pil = make_side_by_side(real_img, degraded_img)
