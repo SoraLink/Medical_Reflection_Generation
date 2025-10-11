@@ -624,7 +624,7 @@ if __name__ == "__main__":
             vol = scan.to_volume().astype(np.float32)  # (D,H,W) HU
             clusters = scan.cluster_annotations()
             for anns in clusters:
-                cons_mask, indv_masks, cbbox, origin = consensus(anns, clevel=0.5)
+                cons_mask, cbbox, _ = consensus(anns, clevel=0.5)
                 # 获取这个 annotation 的 bounding box
                 x0, x1 = cbbox[0]  # inclusive start / stop
                 y0, y1 = cbbox[1]
