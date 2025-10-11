@@ -5,6 +5,7 @@ LIDC 成对样本生成：清晰图 vs 降质图（支持 mask 引导）
   pip install numpy opencv-python pydicom SimpleITK scikit-image torch
 """
 import argparse
+import io
 import os
 import json
 import math
@@ -24,9 +25,9 @@ from pylidc.utils import consensus
 from tqdm import tqdm
 import webdataset as wds
 from webdataset.writer import ShardWriter
+import requests
 
-from augment_with_huatuo import make_side_by_side, load_done_keys, append_done_key
-from generate_bad_images import pil_to_png_bytes
+
 from models import Huatuo
 
 import matplotlib.pyplot as plt
@@ -39,6 +40,73 @@ except Exception:
 
 from skimage.morphology import disk, binary_erosion, binary_dilation
 
+class Huatuo:
+    def __init__(self):
+        self.server = "http://127.0.0.1:6006/inference"
+
+    def inference(self, prompt: str, pil_image) -> str:
+        if pil_image is None:
+            raise ValueError("Pil image cannot be None")
+
+        buf = io.BytesIO()
+        pil_image.save(buf, "JPEG", quality=95)
+        buf.seek(0)
+        files = {'image': ("img.jpg", buf.getvalue(), "image/jpeg")}
+        resp = requests.post(self.server, data={"prompt": prompt}, files=files, timeout=180)
+
+        resp.raise_for_status()
+        j = resp.json()
+        if not j.get("ok", False):
+            raise RuntimeError(j.get("error"))
+        print(j['text'])
+        return j['text']
+
+def pil_to_png_bytes(img: Image.Image) -> bytes:
+    # 如需 16bit 保真，可改：img.save(buf, format="PNG", bits=16)
+    # 或确保 img.mode in ["L","I;16","RGB"] 按需处理
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+def append_done_key(state_path: Path, key: str):
+    """把一个完成的 key 追加到进度文件。"""
+    with open(state_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"key": key}, ensure_ascii=False) + "\n")
+
+def load_done_keys(state_path: Path) -> set:
+    """从进度文件加载已完成的 key 集合。"""
+    done = set()
+    if state_path.exists():
+        with open(state_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    k = obj.get("key")
+                    if k is not None:
+                        done.add(k)
+                except Exception:
+                    # 容忍坏行
+                    continue
+    return done
+
+def make_side_by_side(imgL: Image.Image, imgR: Image.Image, pad=16, bg=(0,0,0)):
+    h = max(imgL.height, imgR.height)
+    def resize_to_h(im, h):
+        if im.height == h:
+            return im
+        w = int(im.width * (h / im.height))
+        return im.resize((w, h), Image.Resampling.LANCZOS)
+
+    imgL = resize_to_h(imgL, h)
+    imgR = resize_to_h(imgR, h)
+    w = imgL.width + pad + imgR.width
+    canvas = Image.new("RGB", (w, h), bg)
+    canvas.paste(imgL, (0, 0))
+    canvas.paste(imgR, (imgL.width + pad, 0))
+    return canvas
 
 
 def _soft_alpha(mask01, blur_frac=0.02):
