@@ -27,9 +27,6 @@ import webdataset as wds
 from webdataset.writer import ShardWriter
 import requests
 
-
-from models import Huatuo
-
 import matplotlib.pyplot as plt
 
 try:
