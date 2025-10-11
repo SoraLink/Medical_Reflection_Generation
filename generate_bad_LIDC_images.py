@@ -641,6 +641,7 @@ if __name__ == "__main__":
                 non_empty_indices = [i for i in range(Dz) if mask_full[:, :, i].any()]
                 hu_slices = [vol_crop[:, :, i] for i in non_empty_indices]
                 mask_slices = [mask_full[:, :, i] for i in non_empty_indices]
+                print(hu_slices[0].shape, mask_slices[0].shape)
 
                 # 2) 构建 Dataset
                 dataset = LIDCSlicePairDataset(
