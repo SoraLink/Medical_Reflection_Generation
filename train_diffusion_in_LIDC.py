@@ -802,21 +802,21 @@ def main():
         examples["input_ids"] = tokenize_captions(examples)
         return examples
 
-    with accelerator.main_process_first():
-        if args.max_train_samples is not None:
-            train_ds = train_ds.shuffle(seed=args.seed).select(range(args.max_train_samples))
+    # with accelerator.main_process_first():
+    #     if args.max_train_samples is not None:
+    #         train_ds = train_ds.shuffle(seed=args.seed).select(range(args.max_train_samples))
         # Set the training transforms
-        train_dataset = train_ds.with_transform(preprocess_train)
+        # train_dataset = train_ds.with_transform(preprocess_train)
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         reals = [train_transforms(real) for real in reals]
-        prompts = [train_transforms(gen) for gen in gens]
+        prompts = [tokenize_captions(prompt) for prompt in prompts]
         return {"pixel_values": torch.stack(reals, dim=0), "input_ids": prompts}
 
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
-        train_dataset,
+        train_ds,
         shuffle=True,
         collate_fn=collate_fn,
         batch_size=args.train_batch_size,
