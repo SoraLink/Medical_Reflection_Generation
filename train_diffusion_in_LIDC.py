@@ -801,9 +801,9 @@ def main():
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        reals = [train_transforms(real) for real in reals]
-        prompts = [tokenize_captions(prompt) for prompt in prompts]
-        return {"pixel_values": torch.stack(reals, dim=0), "input_ids": prompts}
+        pixel_values = torch.stack([train_transforms(real.convert("RGB")) for real in reals], dim=0)
+        input_ids = tokenize_captions(list(prompts))  # 返回的是 torch.LongTensor [B, L]
+        return {"pixel_values": pixel_values, "input_ids": input_ids}
 
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
