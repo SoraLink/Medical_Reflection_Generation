@@ -827,7 +827,7 @@ def main():
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
     count = 0
-    for _ in train_ds:
+    for (real, gen, prompt, huatuo, key) in train_ds:
         count += 1
     print("Total samples:", count)
     num_update_steps_per_epoch = math.ceil(count / args.gradient_accumulation_steps)
