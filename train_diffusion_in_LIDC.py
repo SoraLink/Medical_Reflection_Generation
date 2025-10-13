@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 
 import argparse
+import hashlib
 import io
 import logging
 import math
@@ -817,7 +818,7 @@ def main():
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
         train_ds,
-        shuffle=True,
+        shuffle=False,
         collate_fn=collate_fn,
         batch_size=args.train_batch_size,
         num_workers=args.dataloader_num_workers,
@@ -877,7 +878,6 @@ def main():
     total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
 
     logger.info("***** Running training *****")
-    logger.info(f"  Num examples = {len(train_dataset)}")
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {args.train_batch_size}")
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
