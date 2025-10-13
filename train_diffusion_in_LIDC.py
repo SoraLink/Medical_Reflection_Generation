@@ -480,8 +480,8 @@ def parse_args():
         args.local_rank = env_local_rank
 
     # Sanity checks
-    if args.dataset_name is None and args.train_data_dir is None:
-        raise ValueError("Need either a dataset name or a training folder.")
+    # if args.dataset_name is None and args.train_data_dir is None:
+    #     raise ValueError("Need either a dataset name or a training folder.")
 
     # default to using the same revision for the non-ema model if not specified
     if args.non_ema_revision is None:
@@ -681,26 +681,26 @@ def main():
 
     # In distributed training, the load_dataset function guarantees that only one local process can concurrently
     # download the dataset.
-    if args.dataset_name is not None:
-        # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(
-            args.dataset_name,
-            args.dataset_config_name,
-            cache_dir=args.cache_dir,
-            data_dir=args.train_data_dir,
-        )
-    else:
-        data_files = {}
-        if args.train_data_dir is not None:
-            data_files["train"] = os.path.join(args.train_data_dir)
-        print(data_files)
-        dataset = load_dataset("csv", data_files=data_files)
+    # if args.dataset_name is not None:
+    #     # Downloading and loading a dataset from the hub.
+    #     dataset = load_dataset(
+    #         args.dataset_name,
+    #         args.dataset_config_name,
+    #         cache_dir=args.cache_dir,
+    #         data_dir=args.train_data_dir,
+    #     )
+    # else:
+    #     data_files = {}
+    #     if args.train_data_dir is not None:
+    #         data_files["train"] = os.path.join(args.train_data_dir)
+    #     print(data_files)
+    #     dataset = load_dataset("csv", data_files=data_files)
         # See more about loading custom images at
         # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
-    pattern = "/data/sora/Medical_Reflection_Generation/out/ds_huatuo-{000000..000007}.tar"
+    pattern = "/data/LIDC/augmented/ds_ct-{000000..000007}.tar"
     import torchvision.transforms as T
     def _bytes_to_pil(x):
         if isinstance(x, bytes):
@@ -802,10 +802,10 @@ def main():
         train_dataset = dataset["train"].with_transform(preprocess_train)
 
     def collate_fn(examples):
-        pixel_values = torch.stack([example["real"] for example in examples])
-        pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
-        input_ids = torch.stack([example["prompt"] for example in examples])
-        return {"pixel_values": pixel_values, "input_ids": input_ids}
+        reals, gens, prompts, huatuos, keys = zip(*examples)
+        reals = [train_transforms(real) for real in reals]
+        prompts = [train_transforms(gen) for gen in gens]
+        return {"pixel_values": torch.stack(reals, dim=0), "input_ids": prompts}
 
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
