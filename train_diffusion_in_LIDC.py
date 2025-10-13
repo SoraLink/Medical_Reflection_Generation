@@ -717,9 +717,14 @@ def main():
     def load_txt(x):
         return x if isinstance(x, str) else x.decode("utf-8")
 
+    def split_by_hash(key: str, m: int = 20):
+        # 把样本稳定地分到 0..m-1 的桶里；m=20 相当于 5% 验证集
+        h = int(hashlib.md5(key.encode("utf-8")).hexdigest(), 16) % m
+        return h
+
     import webdataset as wds
 
-    dataset = (
+    base = (
         wds.WebDataset(
             pattern,
             nodesplitter=wds.split_by_node,
@@ -735,8 +740,10 @@ def main():
             lambda x: x        # __key__   -> str
         )
     )
-    dataset  = dataset["train"].train_test_split(test_size=0.05, seed=42)
-    column_names = dataset["train"].column_names
+    train_ds = base.select(lambda real, gen, prompt, huatuo, key: split_by_hash(key, 20) != 0)
+    val_ds = base.select(lambda real, gen, prompt, huatuo, key: split_by_hash(key, 20) == 0)
+
+    column_names = train_ds.column_names
     # 6. Get the column names for input/target.
     dataset_columns = DATASET_NAME_MAPPING.get(args.dataset_name, None)
     print(column_names)
@@ -797,9 +804,9 @@ def main():
 
     with accelerator.main_process_first():
         if args.max_train_samples is not None:
-            dataset["train"] = dataset["train"].shuffle(seed=args.seed).select(range(args.max_train_samples))
+            train_ds = train_ds.shuffle(seed=args.seed).select(range(args.max_train_samples))
         # Set the training transforms
-        train_dataset = dataset["train"].with_transform(preprocess_train)
+        train_dataset = train_ds.with_transform(preprocess_train)
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
