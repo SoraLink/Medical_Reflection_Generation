@@ -741,8 +741,8 @@ def main():
             lambda x: x        # __key__   -> str
         )
     )
-    train_ds = base.select(lambda real, gen, prompt, huatuo, key: split_by_hash(key, 20) != 0)
-    val_ds = base.select(lambda real, gen, prompt, huatuo, key: split_by_hash(key, 20) == 0)
+    train_ds = base.select(lambda s: split_by_hash(s[-1], 20) != 0)
+    val_ds = base.select(lambda s: split_by_hash(s[-1], 20) == 0)
 
     # column_names = train_ds.column_names
     # # 6. Get the column names for input/target.
