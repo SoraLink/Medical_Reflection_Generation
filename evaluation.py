@@ -98,8 +98,7 @@ def get_LIDC_loader(args):
 
         texts = []
         for p in prompts:
-            enc = tokenizer(p, truncation=True, max_length=77, add_special_tokens=True)
-            print(len(enc["input_ids"]))
+            enc = tokenizer(p, truncation=True, max_length=75, add_special_tokens=True)
             p_trunc = tokenizer.decode(enc["input_ids"], skip_special_tokens=True)
             texts.append(p_trunc)
 
