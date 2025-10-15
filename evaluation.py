@@ -94,8 +94,8 @@ def get_LIDC_loader(args):
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        pixel_values = torch.stack([real.convert("RGB") for real in reals], dim=0)
-        return {"img": pixel_values, "prompts": prompts}
+        pixel_values = [real.convert("RGB") for real in reals]
+        return pixel_values, prompts
 
     val_dataloader = torch.utils.data.DataLoader(
         val_ds,
