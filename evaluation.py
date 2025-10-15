@@ -97,10 +97,9 @@ def get_LIDC_loader(args):
         pixel_values = [real.convert("RGB") for real in reals]
 
         texts = []
-        max_len = getattr(tokenizer, "model_max_length", 77)
-
         for p in prompts:
-            enc = tokenizer(p, truncation=True, max_length=max_len, add_special_tokens=True)
+            enc = tokenizer(p, truncation=True, max_length=77, add_special_tokens=True)
+            print(len(enc["input_ids"]))
             p_trunc = tokenizer.decode(enc["input_ids"], skip_special_tokens=True)
             texts.append(p_trunc)
 
