@@ -538,8 +538,8 @@ def main():
     # Handle the repository creation
     if accelerator.is_main_process:
         if args.output_dir is not None:
-            os.makedirs(args.output_dir, exist_ok=True)
-            os.mkdir(os.path.join(args.output_dir, 'validation'))
+            Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+            (Path(args.output_dir) / "validation").mkdir(parents=True, exist_ok=True)
 
         if args.push_to_hub:
             repo_id = create_repo(
