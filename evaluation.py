@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import io
 import os
 
 import torch
