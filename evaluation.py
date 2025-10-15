@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import os
 
 import torch
@@ -46,6 +47,62 @@ def get_cxr_loader(args):
         return real_images, prompts
     loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn)
     return loader
+
+def get_LIDC_loader(args):
+    pattern = "/data/LIDC/augmented/ds_ct-{000000..000007}.tar"
+    import torchvision.transforms as T
+    def _bytes_to_pil(x):
+        if isinstance(x, bytes):
+            return Image.open(io.BytesIO(x)).convert("RGB")
+        if isinstance(x, Image.Image):
+            return x
+        if torch.is_tensor(x):
+            return T.ToPILImage()(x)
+        raise TypeError(f"unexpected image type: {type(x)}")
+
+    def load_img(x):
+        return _bytes_to_pil(x)
+
+    def load_txt(x):
+        return x if isinstance(x, str) else x.decode("utf-8")
+
+    def split_by_hash(key: str, m: int = 20):
+        # 把样本稳定地分到 0..m-1 的桶里；m=20 相当于 5% 验证集
+        h = int(hashlib.md5(key.encode("utf-8")).hexdigest(), 16) % m
+        return h
+
+    import webdataset as wds
+
+    base = (
+        wds.WebDataset(
+            pattern,
+            nodesplitter=wds.split_by_node,
+            shardshuffle=False
+        )  # 显式关掉分片shuffle
+        # 不要调用 .decode(...)，避免触发内置的 json 解码器
+        .to_tuple("real.png", "gen.png", "prompt.txt", "huatuo.json", "__key__")
+        .map_tuple(
+            load_img,  # real.png  -> PIL.Image
+            load_img,  # gen.png   -> PIL.Image
+            load_txt,  # prompt.txt-> str
+            load_txt,  # huatuo.json(其实是纯文本)-> str
+            lambda x: x  # __key__   -> str
+        )
+    )
+    val_ds = base.select(lambda s: split_by_hash(s[-1], 20) == 0)
+
+    def collate_fn(examples):
+        reals, gens, prompts, huatuos, keys = zip(*examples)
+        pixel_values = torch.stack([real.convert("RGB") for real in reals], dim=0)
+        return {"img": pixel_values, "prompts": prompts}
+
+    val_dataloader = torch.utils.data.DataLoader(
+        val_ds,
+        shuffle=False,
+        collate_fn=collate_fn,
+        batch_size=16,
+    )
+    return val_dataloader
 
 def get_ct_rate_loader(args):
     dataset = load_dataset(
@@ -100,6 +157,8 @@ def evaluate(args):
         loader = get_cxr_loader(args)
     elif args.modality == 'ChestCT':
         loader = get_ct_rate_loader(args)
+    elif args.modality == 'LIDC':
+        loader = get_LIDC_loader(args)
     else:
         raise NotImplementedError
 
@@ -118,7 +177,7 @@ def evaluate(args):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, choices=['minim', 'diffusion', 'imagen', 'dalle', 'reflection'], default='minim')
-    parser.add_argument('--modality', type=str, choices=['CXR', 'ChestCT'], default='CXR')
+    parser.add_argument('--modality', type=str, choices=['CXR', 'ChestCT', 'LIDC'], default='LIDC')
     parser.add_argument('--weight_path', type=str)
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--data_dir', type=str, default='./data')
