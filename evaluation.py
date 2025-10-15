@@ -95,7 +95,16 @@ def get_LIDC_loader(args):
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         pixel_values = [real.convert("RGB") for real in reals]
-        return pixel_values, list(prompts)
+
+        texts = []
+        max_len = getattr(tokenizer, "model_max_length", 77)
+
+        for p in prompts:
+            enc = tokenizer(p, truncation=True, max_length=max_len, add_special_tokens=True)
+            p_trunc = tokenizer.decode(enc["input_ids"], skip_special_tokens=True)
+            texts.append(p_trunc)
+
+        return pixel_values, texts
 
     val_dataloader = torch.utils.data.DataLoader(
         val_ds,
