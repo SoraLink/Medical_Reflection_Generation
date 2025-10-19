@@ -110,7 +110,7 @@ def train_one_unet(
         reals, gens, prompts, huatuos, keys = zip(*examples)
         pixel_values = torch.stack([train_transforms(real.convert("RGB")) for real in reals], dim=0)
         input_ids = (list(prompts))  # 返回的是 torch.LongTensor [B, L]
-        return pixel_values, input_ids
+        return {"images": pixel_values, "texts": input_ids}
 
     trainer = ImagenTrainer(
         imagen,
