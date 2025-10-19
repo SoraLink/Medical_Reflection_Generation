@@ -117,6 +117,24 @@ def train_one_unet(
         batch_size=4,
     )
 
+    train_transforms_valid = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
+    ])
+
+    def collate_fn(examples):
+        reals, gens, prompts, huatuos, keys = zip(*examples)
+        images = torch.stack([train_transforms_valid(img) for img in reals], dim=0)  # [B,3,H,W]
+        texts = t5.t5_encode_text(prompts, name="google-t5/t5-large")
+        return images, texts
+
+    valid_dataloader = torch.utils.data.DataLoader(
+        val_ds,
+        shuffle=False,
+        collate_fn=collate_fn,
+        batch_size=4,
+    )
+
     trainer = ImagenTrainer(
         imagen,
         use_ema=True,
@@ -133,6 +151,7 @@ def train_one_unet(
     trainer.load_from_checkpoint_folder()
 
     trainer.add_train_dataloader(train_dataloader)
+    trainer.add_valid_dataloader(valid_dataloader)
 
 
 
