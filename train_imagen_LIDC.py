@@ -90,12 +90,8 @@ def train_one_unet(
     )
     train_ds = base.select(lambda s: split_by_hash(s[-1], 20) != 0)
     val_ds = base.select(lambda s: split_by_hash(s[-1], 20) == 0)
-    from transformers import CLIPTextModel, CLIPTokenizer
 
     dataset_length = 13953
-    tokenizer = CLIPTokenizer.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="tokenizer", revision=args.revision
-    )
     from torchvision import transforms
 
     # Preprocessing the datasets.
@@ -109,18 +105,12 @@ def train_one_unet(
         ]
     )
 
-    def tokenize_captions(examples, is_train=True):
-
-        inputs = tokenizer(
-            examples, max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
-        )
-        return inputs.input_ids
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         pixel_values = torch.stack([train_transforms(real.convert("RGB")) for real in reals], dim=0)
-        input_ids = tokenize_captions(list(prompts))  # 返回的是 torch.LongTensor [B, L]
-        return {"pixel_values": pixel_values, "input_ids": input_ids}
+        input_ids = (list(prompts))  # 返回的是 torch.LongTensor [B, L]
+        return pixel_values, input_ids
 
     trainer = ImagenTrainer(
         imagen,
