@@ -112,6 +112,14 @@ def train_one_unet(
         input_ids = (list(prompts))  # 返回的是 torch.LongTensor [B, L]
         return {"images": pixel_values, "texts": input_ids}
 
+    train_dataloader = torch.utils.data.DataLoader(
+        train_ds,
+        shuffle=False,
+        collate_fn=collate_fn,
+        batch_size=args.train_batch_size,
+        num_workers=args.dataloader_num_workers,
+    )
+
     trainer = ImagenTrainer(
         imagen,
         use_ema=True,
@@ -127,11 +135,7 @@ def train_one_unet(
 
     trainer.load_from_checkpoint_folder()
 
-    trainer.add_train_dataset(
-        train_ds,
-        batch_size=1,
-        collate_fn=collate_fn
-    )
+    trainer.add_train_dataloader(train_dataloader)
 
 
 
