@@ -13,6 +13,20 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from imagen_pytorch import t5
+from transformers import T5EncoderModel, AutoTokenizer
+
+
+
+def _patched_get_model(name):
+    print(f"[T5] using safetensors for {name}")
+    return T5EncoderModel.from_pretrained(
+        name,
+        use_safetensors=True,        # 关键：强制只用 safetensors
+        cache_dir="/data/hf_cache"   # 可选：固定缓存路径
+    )
+
+def _patched_get_tokenizer(name):
+    return AutoTokenizer.from_pretrained(name, cache_dir="/data/hf_cache")
 
 
 def train_one_unet(
