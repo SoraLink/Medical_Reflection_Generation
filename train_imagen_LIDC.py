@@ -108,7 +108,18 @@ def train_one_unet(
 
     trainer.add_train_dataset(
         train_ds,
-        valid_dataset=val_ds,
+        batch_size=1,
+        collate_fn=Collator(
+            image_size=512,
+            image_label='image',
+            text_label='findings',
+            name="google/t5-v1_1-large",
+            channels='L',
+            url_label=None
+        )
+    )
+    trainer.add_valid_dataset(
+        val_ds,
         batch_size=1,
         collate_fn=Collator(
             image_size=512,
