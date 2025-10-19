@@ -116,8 +116,7 @@ def train_one_unet(
         train_ds,
         shuffle=False,
         collate_fn=collate_fn,
-        batch_size=args.train_batch_size,
-        num_workers=args.dataloader_num_workers,
+        batch_size=4,
     )
 
     trainer = ImagenTrainer(
