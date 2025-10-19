@@ -84,6 +84,7 @@ def train_one_unet(
             load_txt,          # huatuo.json(其实是纯文本)-> str
             lambda x: x        # __key__   -> str
         )
+        .with_length(13953)
     )
     train_ds = base.select(lambda s: split_by_hash(s[-1], 20) != 0)
     dataset_length = 13953
