@@ -105,7 +105,7 @@ def train_one_unet(
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
-        texts = list(prompts)
+        texts = [str(p) for p in prompts if isinstance(p, str)]
         return images, texts
 
     train_dataloader = torch.utils.data.DataLoader(
