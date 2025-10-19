@@ -106,7 +106,7 @@ def train_one_unet(
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
         texts = list(prompts)
-        return {"images": images, "texts": texts}
+        return images, texts
 
     train_dataloader = torch.utils.data.DataLoader(
         train_ds,
