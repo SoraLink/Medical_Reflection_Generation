@@ -16,19 +16,6 @@ from imagen_pytorch import t5
 from transformers import T5EncoderModel, AutoTokenizer
 
 
-
-def _patched_get_model(name):
-    print(f"[T5] using safetensors for {name}")
-    return T5EncoderModel.from_pretrained(
-        name,
-        use_safetensors=True,        # 关键：强制只用 safetensors
-        cache_dir="/data/hf_cache"   # 可选：固定缓存路径
-    )
-
-def _patched_get_tokenizer(name):
-    return AutoTokenizer.from_pretrained(name, cache_dir="/data/hf_cache")
-
-
 def train_one_unet(
     unet,
     epoches,
@@ -120,7 +107,7 @@ def train_one_unet(
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
-        texts = t5.t5_encode_text(prompts, name="google/t5-v1_1-large")
+        texts = t5.t5_encode_text(prompts, name="google-t5/t5-large")
         return images, texts
 
     train_dataloader = torch.utils.data.DataLoader(
