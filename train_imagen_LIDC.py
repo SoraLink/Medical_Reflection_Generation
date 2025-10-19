@@ -90,8 +90,38 @@ def train_one_unet(
     )
     train_ds = base.select(lambda s: split_by_hash(s[-1], 20) != 0)
     val_ds = base.select(lambda s: split_by_hash(s[-1], 20) == 0)
+    from transformers import CLIPTextModel, CLIPTokenizer
 
     dataset_length = 13953
+    tokenizer = CLIPTokenizer.from_pretrained(
+        args.pretrained_model_name_or_path, subfolder="tokenizer", revision=args.revision
+    )
+    from torchvision import transforms
+
+    # Preprocessing the datasets.
+    train_transforms = transforms.Compose(
+        [
+            transforms.Resize(args.resolution, interpolation=transforms.InterpolationMode.BILINEAR),
+            transforms.CenterCrop(args.resolution) if args.center_crop else transforms.RandomCrop(args.resolution),
+            transforms.RandomHorizontalFlip() if args.random_flip else transforms.Lambda(lambda x: x),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5]),
+        ]
+    )
+
+    def tokenize_captions(examples, is_train=True):
+
+        inputs = tokenizer(
+            examples, max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        return inputs.input_ids
+
+    def collate_fn(examples):
+        reals, gens, prompts, huatuos, keys = zip(*examples)
+        pixel_values = torch.stack([train_transforms(real.convert("RGB")) for real in reals], dim=0)
+        input_ids = tokenize_captions(list(prompts))  # 返回的是 torch.LongTensor [B, L]
+        return {"pixel_values": pixel_values, "input_ids": input_ids}
+
     trainer = ImagenTrainer(
         imagen,
         use_ema=True,
@@ -110,26 +140,7 @@ def train_one_unet(
     trainer.add_train_dataset(
         train_ds,
         batch_size=1,
-        collate_fn=Collator(
-            image_size=512,
-            image_label='image',
-            text_label='findings',
-            name="google/t5-v1_1-large",
-            channels='L',
-            url_label=None
-        )
-    )
-    trainer.add_valid_dataset(
-        val_ds,
-        batch_size=1,
-        collate_fn=Collator(
-            image_size=512,
-            image_label='image',
-            text_label='findings',
-            name="google/t5-v1_1-large",
-            channels='L',
-            url_label=None
-        )
+        collate_fn=collate_fn
     )
 
 
