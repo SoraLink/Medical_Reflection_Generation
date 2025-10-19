@@ -12,6 +12,7 @@ from imagen_pytorch.utils import safeget
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from imagen_pytorch import t5
 
 
 def train_one_unet(
@@ -105,7 +106,7 @@ def train_one_unet(
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
-        texts = [str(p) for p in prompts if isinstance(p, str)]
+        texts = t5.t5_encode_text(prompts, name="google/t5-v1_1-large")
         return images, texts
 
     train_dataloader = torch.utils.data.DataLoader(
