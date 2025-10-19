@@ -87,6 +87,8 @@ def train_one_unet(
         .with_length(13953)
     )
     train_ds = base.select(lambda s: split_by_hash(s[-1], 20) != 0)
+    val_ds = base.select(lambda s: split_by_hash(s[-1], 20) == 0)
+
     dataset_length = 13953
     trainer = ImagenTrainer(
         imagen,
@@ -106,9 +108,10 @@ def train_one_unet(
 
     trainer.add_train_dataset(
         train_ds,
+        valid_dataset=val_ds,
         batch_size=1,
         collate_fn=Collator(
-            image_size=256,
+            image_size=512,
             image_label='image',
             text_label='findings',
             name="google/t5-v1_1-large",
