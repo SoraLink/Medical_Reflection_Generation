@@ -39,7 +39,7 @@ def train_one_unet(
         unets = (unet1, unet2),
         channels=1,
         text_encoder_name = 't5-large',
-        image_sizes = (64, 256, 512),
+        image_sizes = (128, 512),
         timesteps = 1000,
         cond_drop_prob = 0.1
     ).cuda()
