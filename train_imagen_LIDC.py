@@ -40,7 +40,7 @@ def train_one_unet(
 
     imagen = Imagen(
         unets = (unet1, unet2),
-        channels=1,
+        channels=3,
         text_encoder_name = 't5-large',
         image_sizes = (128, 512),
         timesteps = 1000,
