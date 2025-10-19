@@ -99,8 +99,7 @@ def train_one_unet(
         checkpoint_every=200,
         cosine_decay_max_steps=dataset_length*epoches,
         max_grad_norm=1.0,
-        split_valid_from_train=True,
-        split_valid_fraction = 0.0
+        split_valid_from_train=False,
     )
 
 
