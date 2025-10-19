@@ -1,8 +1,10 @@
 import argparse
 import hashlib
+import io
 from pathlib import Path
 
 import torch
+from PIL import Image
 from datasets import load_dataset
 from imagen_pytorch import Unet, Imagen, ImagenTrainer
 from imagen_pytorch.data import Collator
