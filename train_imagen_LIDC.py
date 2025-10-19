@@ -95,22 +95,18 @@ def train_one_unet(
     from torchvision import transforms
 
     # Preprocessing the datasets.
-    train_transforms = transforms.Compose(
-        [
-            transforms.Resize(512, interpolation=transforms.InterpolationMode.BILINEAR),
-            transforms.CenterCrop(512) if False else transforms.RandomCrop(512),
-            transforms.RandomHorizontalFlip() if False else transforms.Lambda(lambda x: x),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5], [0.5]),
-        ]
-    )
-
+    train_transforms = transforms.Compose([
+        transforms.Resize(512, interpolation=transforms.InterpolationMode.BILINEAR),
+        transforms.RandomCrop(512),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
+    ])
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        pixel_values = torch.stack([train_transforms(real.convert("RGB")) for real in reals], dim=0)
-        input_ids = (list(prompts))  # 返回的是 torch.LongTensor [B, L]
-        return {"images": pixel_values, "texts": input_ids}
+        images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
+        texts = list(prompts)
+        return {"images": images, "texts": texts}
 
     train_dataloader = torch.utils.data.DataLoader(
         train_ds,
