@@ -21,6 +21,8 @@ def train_one_unet(
     epoches,
     args
 ):
+    device0 = torch.device('cuda:0')
+    device1 = torch.device('cuda:1')
     unet1 = Unet(
         dim = 512,
         cond_dim = 512,
@@ -29,7 +31,7 @@ def train_one_unet(
         layer_attns = (False, True, True, True),
         layer_cross_attns=(False, True, True, True),
         attn_heads=8
-    )
+    ).to(device0)
 
     unet2 = Unet(
         dim = 128,
@@ -38,7 +40,7 @@ def train_one_unet(
         layer_attns = (False, False, False, True),
         layer_cross_attns = (False, False, False, True),
         attn_heads=8
-    )
+    ).to(device1)
 
     imagen = Imagen(
         unets = (unet1, unet2),
@@ -173,7 +175,7 @@ def train_one_unet(
 
 def train(args):
     unet_epochs = {
-        1: 0,
+        # 1: 3,
         2: 3
     }
     for unet_number, epoch in unet_epochs.items():
