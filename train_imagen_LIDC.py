@@ -37,8 +37,8 @@ def train_one_unet(
         dim = 128,
         dim_mults = (1, 2, 4),
         num_resnet_blocks = (2, 4, 8),
-        layer_attns = (False, False, False, True),
-        layer_cross_attns = (False, False, False, True),
+        layer_attns = (False, False, True),
+        layer_cross_attns = (False, False, True),
         attn_heads=8
     ).to(device1)
 
