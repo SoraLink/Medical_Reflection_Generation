@@ -136,6 +136,7 @@ def train_one_unet(
         collate_fn=collate_fn_valid,
         batch_size=2,
     )
+    imagen.text_encoder.to(device1)
 
     trainer = ImagenTrainer(
         imagen,
