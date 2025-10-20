@@ -107,7 +107,7 @@ def train_one_unet(
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
-        texts = t5.t5_encode_text(prompts, name="google-t5/t5-large")
+        texts = t5.t5_encode_text(prompts, name="/data/hf_cache/models--google-t5--t5-large")
         return images, texts
 
     train_dataloader = torch.utils.data.DataLoader(
@@ -173,8 +173,8 @@ def train_one_unet(
 
 def train(args):
     unet_epochs = {
-        1: 0,
-        2: 10
+        1: 3,
+        2: 3
     }
     for unet_number, epoch in unet_epochs.items():
         print('Training for unet number {}'.format(unet_number))
