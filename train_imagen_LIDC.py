@@ -101,7 +101,7 @@ def train_one_unet(
     # Preprocessing the datasets.
     train_transforms = transforms.Compose([
         transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
-        transforms.RandomCrop(512),
+        transforms.RandomCrop(256),
         transforms.ToTensor(),
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
     ])
