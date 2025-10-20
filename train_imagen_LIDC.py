@@ -46,7 +46,7 @@ def train_one_unet(
         unets = (unet1, unet2),
         channels=3,
         text_encoder_name = 't5-large',
-        image_sizes = (128, 512),
+        image_sizes = (128, 256),
         timesteps = 1000,
         cond_drop_prob = 0.1
     )
@@ -100,7 +100,7 @@ def train_one_unet(
 
     # Preprocessing the datasets.
     train_transforms = transforms.Compose([
-        transforms.Resize(512, interpolation=transforms.InterpolationMode.BILINEAR),
+        transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
         transforms.RandomCrop(512),
         transforms.ToTensor(),
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
@@ -120,6 +120,7 @@ def train_one_unet(
     )
 
     train_transforms_valid = transforms.Compose([
+        transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
         transforms.ToTensor(),
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
     ])
