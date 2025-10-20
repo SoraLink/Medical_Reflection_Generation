@@ -35,8 +35,8 @@ def train_one_unet(
 
     unet2 = Unet(
         dim = 128,
-        dim_mults = (1, 2, 4, 8),
-        num_resnet_blocks = (2, 2, 4, 4),
+        dim_mults = (1, 2, 4),
+        num_resnet_blocks = (2, 4, 8),
         layer_attns = (False, False, False, True),
         layer_cross_attns = (False, False, False, True),
         attn_heads=8
