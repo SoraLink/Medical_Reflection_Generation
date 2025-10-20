@@ -49,7 +49,7 @@ def train_one_unet(
         image_sizes = (128, 512),
         timesteps = 1000,
         cond_drop_prob = 0.1
-    ).cuda()
+    )
 
     pattern = "/data/LIDC/augmented/ds_ct-{000000..000007}.tar"
     import torchvision.transforms as T
@@ -136,7 +136,6 @@ def train_one_unet(
         collate_fn=collate_fn_valid,
         batch_size=2,
     )
-    imagen.text_encoder.to(device1)
 
     trainer = ImagenTrainer(
         imagen,
