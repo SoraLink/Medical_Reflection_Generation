@@ -34,7 +34,7 @@ def train_one_unet(
     unet2 = Unet(
         dim = 128,
         dim_mults = (1, 2, 4, 8),
-        num_resnet_blocks = (2, 4, 8, 8),
+        num_resnet_blocks = (2, 2, 4, 4),
         layer_attns = (False, False, False, True),
         layer_cross_attns = (False, False, False, True),
         attn_heads=8
@@ -132,7 +132,7 @@ def train_one_unet(
         val_ds,
         shuffle=False,
         collate_fn=collate_fn_valid,
-        batch_size=4,
+        batch_size=2,
     )
 
     trainer = ImagenTrainer(
@@ -173,8 +173,8 @@ def train_one_unet(
 
 def train(args):
     unet_epochs = {
-        1: 10,
-        2: 20
+        1: 0,
+        2: 10
     }
     for unet_number, epoch in unet_epochs.items():
         print('Training for unet number {}'.format(unet_number))
