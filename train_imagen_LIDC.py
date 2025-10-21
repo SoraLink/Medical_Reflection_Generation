@@ -116,7 +116,7 @@ def train_one_unet(
         train_ds,
         shuffle=False,
         collate_fn=collate_fn,
-        batch_size=4,
+        batch_size=2,
     )
 
     train_transforms_valid = transforms.Compose([
