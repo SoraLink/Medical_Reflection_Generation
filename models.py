@@ -307,21 +307,30 @@ class ImagenModel:
 
         unet2 = Unet(
             dim=128,
-            dim_mults=(1, 2, 4),
-            num_resnet_blocks=(2, 4, 8),
-            layer_attns=(False, False, True),
-            layer_cross_attns=(False, False, True),
+            dim_mults=(1, 2, 4, 8),
+            num_resnet_blocks=(2, 4, 8, 8),
+            layer_attns=(False, False, False, True),
+            layer_cross_attns=(False, False, False, True),
+            attn_heads=8
+        )
+
+        unet3 = Unet(
+            dim=128,
+            dim_mults=(1, 2, 4, 8),
+            num_resnet_blocks=(2, 4, 8, 8),
+            layer_attns=False,
+            layer_cross_attns=(False, False, False, True),
             attn_heads=8
         )
 
         imagen = Imagen(
-            unets=(unet1, unet2),
-            channels=3,
-            text_encoder_name="/data/hf_cache/t5-large",
-            image_sizes=(128, 256),
-            timesteps=50,
-            cond_drop_prob=0.1
-        )
+            unets=(unet1, unet2, unet3),
+            channels=1,
+            text_encoder_name='t5-large',
+            image_sizes=(64, 256, 512),
+            cond_drop_prob=0.1,
+            timesteps=50
+        ).cuda()
         try:
             self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
         except Exception:

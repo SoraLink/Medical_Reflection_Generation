@@ -21,41 +21,49 @@ def train_one_unet(
     epoches,
     args
 ):
-    device0 = torch.device('cuda:0')
-    device1 = torch.device('cuda:1')
+    self.device = device
     unet1 = Unet(
-        dim = 512,
-        cond_dim = 512,
-        dim_mults = (1,2,3,4),
-        num_resnet_blocks = 3,
-        layer_attns = (False, True, True, True),
+        dim=512,
+        cond_dim=512,
+        dim_mults=(1, 2, 3, 4),
+        num_resnet_blocks=3,
+        layer_attns=(False, True, True, True),
         layer_cross_attns=(False, True, True, True),
         attn_heads=8
-    ).to(device0)
+    )
 
     unet2 = Unet(
-        dim = 128,
-        dim_mults = (1, 2, 4),
-        num_resnet_blocks = (2, 4, 8),
-        layer_attns = (False, False, True),
-        layer_cross_attns = (False, False, True),
+        dim=128,
+        dim_mults=(1, 2, 4, 8),
+        num_resnet_blocks=(2, 4, 8, 8),
+        layer_attns=(False, False, False, True),
+        layer_cross_attns=(False, False, False, True),
         attn_heads=8
-    ).to(device1)
+    )
+
+    unet3 = Unet(
+        dim=128,
+        dim_mults=(1, 2, 4, 8),
+        num_resnet_blocks=(2, 4, 8, 8),
+        layer_attns=False,
+        layer_cross_attns=(False, False, False, True),
+        attn_heads=8
+    )
 
     imagen = Imagen(
-        unets = (unet1, unet2),
-        channels=3,
-        text_encoder_name = 't5-large',
-        image_sizes = (128, 256),
-        timesteps = 1000,
-        cond_drop_prob = 0.1
-    )
+        unets=(unet1, unet2, unet3),
+        channels=1,
+        text_encoder_name='t5-large',
+        image_sizes=(64, 256, 512),
+        cond_drop_prob=0.1,
+        timesteps=50
+    ).cuda()
 
     pattern = "/data/LIDC/augmented/ds_ct-{000000..000007}.tar"
     import torchvision.transforms as T
     def _bytes_to_pil(x):
         if isinstance(x, bytes):
-            return Image.open(io.BytesIO(x)).convert("RGB")
+            return Image.open(io.BytesIO(x)).convert("L")
         if isinstance(x, Image.Image):
             return x
         if torch.is_tensor(x):
@@ -103,7 +111,7 @@ def train_one_unet(
         transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
         transforms.RandomCrop(256),
         transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
+        transforms.Normalize([0.5], [0.5])
     ])
 
     def collate_fn(examples):
@@ -122,13 +130,13 @@ def train_one_unet(
     train_transforms_valid = transforms.Compose([
         transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
         transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # 3 通道
+        transforms.Normalize([0.5], [0.5])
     ])
 
     def collate_fn_valid(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms_valid(img) for img in reals], dim=0)  # [B,3,H,W]
-        texts = t5.t5_encode_text(prompts, name="google-t5/t5-large")
+        texts = t5.t5_encode_text(prompts, name="/data/hf_cache/t5-large")
         return images, texts
 
     valid_dataloader = torch.utils.data.DataLoader(
