@@ -317,7 +317,7 @@ class ImagenModel:
         imagen = Imagen(
             unets=(unet1, unet2),
             channels=3,
-            text_encoder_name='t5-large',
+            text_encoder_name="/data/hf_cache/t5-large",
             image_sizes=(128, 256),
             timesteps=1000,
             cond_drop_prob=0.1
