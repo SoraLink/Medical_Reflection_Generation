@@ -184,8 +184,8 @@ def train_one_unet(
 
 def train(args):
     unet_epochs = {
-        1: 3,
-        2: 3,
+        # 1: 3,
+        # 2: 3,
         3: 3
     }
     for unet_number, epoch in unet_epochs.items():
