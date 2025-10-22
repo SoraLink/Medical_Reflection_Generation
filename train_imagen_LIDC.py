@@ -21,7 +21,6 @@ def train_one_unet(
     epoches,
     args
 ):
-    self.device = device
     unet1 = Unet(
         dim=512,
         cond_dim=512,
