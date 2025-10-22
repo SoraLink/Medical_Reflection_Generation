@@ -107,8 +107,6 @@ def train_one_unet(
 
     # Preprocessing the datasets.
     train_transforms = transforms.Compose([
-        transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
-        transforms.RandomCrop(256),
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])
     ])
@@ -116,6 +114,7 @@ def train_one_unet(
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
         images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
+        print(images.shape)
         texts = t5.t5_encode_text(prompts, name="/data/hf_cache/t5-large")
         return images, texts
 
@@ -127,7 +126,6 @@ def train_one_unet(
     )
 
     train_transforms_valid = transforms.Compose([
-        transforms.Resize(256, interpolation=transforms.InterpolationMode.BILINEAR),
         transforms.ToTensor(),
         transforms.Normalize([0.5], [0.5])
     ])
