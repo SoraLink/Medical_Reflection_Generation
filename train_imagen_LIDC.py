@@ -176,7 +176,7 @@ def train_one_unet(
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
                 images[0].save(f'./samples/sample-{i}-{step // 2000}.png')
-    trainer.save('./imagen_LIDC/imagen.pt')
+    trainer.save('./imagen_LIDC_final/imagen.pt')
 
 def train(args):
     unet_epochs = {
