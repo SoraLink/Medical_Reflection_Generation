@@ -167,6 +167,7 @@ def train_one_unet(
         progress = tqdm(range(len(trainer.train_dl)))
         for step in progress:
             if global_step < start_global_step:
+                global_step += 1
                 continue
             loss = trainer.train_step(unet_number=unet)
             progress.set_postfix(loss=f'{loss:.4f}')
