@@ -159,12 +159,13 @@ def train_one_unet(
 
     trainer.add_train_dataloader(train_dataloader)
     trainer.add_valid_dataloader(valid_dataloader)
-
-
-
+    start_global_step = 2000
+    global_step = 0
     for i in range(epoches):
         progress = tqdm(range(len(trainer.train_dl)))
         for step in progress:
+            if global_step < start_global_step:
+                continue
             loss = trainer.train_step(unet_number=unet)
             progress.set_postfix(loss=f'{loss:.4f}')
             if not (step % 500) and step > 0 and trainer.is_main:
@@ -176,6 +177,7 @@ def train_one_unet(
                                         batch_size=1, return_pil_images=True,
                                         stop_at_unet_number=unet)
                 images[0].save(f'./samples/sample-{i}-{step // 2000}.png')
+            global_step += 1
     trainer.save('./imagen_LIDC_final/imagen.pt')
 
 def train(args):
