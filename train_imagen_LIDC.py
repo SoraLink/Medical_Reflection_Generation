@@ -121,7 +121,7 @@ def train_one_unet(
         train_ds,
         shuffle=False,
         collate_fn=collate_fn,
-        batch_size=2,
+        batch_size=1,
     )
 
     train_transforms_valid = transforms.Compose([
@@ -139,7 +139,7 @@ def train_one_unet(
         val_ds,
         shuffle=False,
         collate_fn=collate_fn_valid,
-        batch_size=2,
+        batch_size=1,
     )
 
     trainer = ImagenTrainer(
@@ -181,7 +181,7 @@ def train_one_unet(
 def train(args):
     unet_epochs = {
         # 1: 3,
-        2: 3,
+        # 2: 3,
         3: 3
     }
     for unet_number, epoch in unet_epochs.items():
