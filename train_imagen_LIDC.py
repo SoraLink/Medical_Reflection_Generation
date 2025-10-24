@@ -162,6 +162,8 @@ def train_one_unet(
     start_global_step = 2000
     global_step = 0
     for i in range(epoches):
+        print(f"Epoch {i+1}")
+        print(f"Global Step: {global_step}")
         progress = tqdm(range(len(trainer.train_dl)))
         for step in progress:
             if global_step < start_global_step:
