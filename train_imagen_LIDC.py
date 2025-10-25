@@ -159,7 +159,7 @@ def train_one_unet(
 
     trainer.add_train_dataloader(train_dataloader)
     trainer.add_valid_dataloader(valid_dataloader)
-    start_global_step = 4000
+    start_global_step = 8000
     global_step = 0
     for i in range(epoches):
         print(f"Epoch {i+1}")
