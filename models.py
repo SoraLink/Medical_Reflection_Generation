@@ -331,20 +331,12 @@ class ImagenModel:
             cond_drop_prob=0.1,
             timesteps=50
         ).cuda()
-        self.trainer = ImagenTrainer(
-            imagen,
-            use_ema=True,
-            lr=1e-4,
-            warmup_steps=500,
-            checkpoint_path='./imagen_LIDC',
-            checkpoint_every=200,
-            max_grad_norm=1.0,
-            split_valid_from_train=False,
-        )
         try:
-            self.trainer.load_from_checkpoint_folder()
-        except Exception:
+            print(f"Loading model from {model_path}")
+            self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
+        except Exception as e:
             # 兜底：若没有打包的checkpoint，就用手动方式加载
+            print(e)
             ckpt = torch.load(model_path, map_location=self.device)
             imagen.load_state_dict(ckpt['model'] if isinstance(ckpt, dict) and 'model' in ckpt else ckpt)
             self.imagen = imagen
@@ -354,7 +346,7 @@ class ImagenModel:
     @torch.no_grad()
     def __call__(self, prompts, num_inference_steps, stop_at_unet_number: int = 3, cond_scale: float = 3.0,
                  return_pil_images: bool = True):
-        images = self.trainer.sample(
+        images = self.imagen.sample(
             texts=prompts,
             batch_size=len(prompts),
             return_pil_images=return_pil_images,
