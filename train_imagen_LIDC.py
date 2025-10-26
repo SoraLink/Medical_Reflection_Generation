@@ -148,7 +148,7 @@ def train_one_unet(
         lr=1e-4,
         warmup_steps=500,
         checkpoint_path=args.output_path,
-        checkpoint_every=200,
+        checkpoint_every=2000,
         cosine_decay_max_steps=dataset_length*epoches,
         max_grad_norm=1.0,
         split_valid_from_train=False,
