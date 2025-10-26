@@ -112,9 +112,9 @@ def train_one_unet(
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        # images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
+        images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
         texts = t5.t5_encode_text(prompts, name="/data/hf_cache/t5-large")
-        return reals, texts
+        return images, texts
 
     train_dataloader = torch.utils.data.DataLoader(
         train_ds,
@@ -129,9 +129,9 @@ def train_one_unet(
 
     def collate_fn_valid(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        # images = torch.stack([train_transforms_valid(img) for img in reals], dim=0)  # [B,3,H,W]
+        images = torch.stack([train_transforms_valid(img) for img in reals], dim=0)  # [B,3,H,W]
         texts = t5.t5_encode_text(prompts, name="/data/hf_cache/t5-large")
-        return reals, texts
+        return images, texts
 
     valid_dataloader = torch.utils.data.DataLoader(
         val_ds,
