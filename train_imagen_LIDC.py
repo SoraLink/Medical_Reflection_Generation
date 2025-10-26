@@ -33,6 +33,7 @@ def train_one_unet(
 
     unet2 = Unet(
         dim=128,
+        cond_dim=512,
         dim_mults=(1, 2, 4, 8),
         num_resnet_blocks=(2, 4, 8, 8),
         layer_attns=(False, False, False, True),
@@ -42,6 +43,7 @@ def train_one_unet(
 
     unet3 = Unet(
         dim=128,
+        cond_dim=512,
         dim_mults=(1, 2, 4, 8),
         num_resnet_blocks=(2, 4, 8, 8),
         layer_attns=False,
@@ -157,7 +159,7 @@ def train_one_unet(
 
     trainer.add_train_dataloader(train_dataloader)
     trainer.add_valid_dataloader(valid_dataloader)
-    start_global_step = 8000
+    start_global_step = 0
     global_step = 0
     for i in range(epoches):
         print(f"Epoch {i+1}")
