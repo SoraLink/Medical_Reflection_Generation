@@ -351,6 +351,7 @@ class ImagenModel:
             stop_at_unet_number=stop_at_unet_number,
             cond_scale=cond_scale
         )
+        images = [img.convert("RGB") for img in images]
         return images
 
 class DALLEModel:
