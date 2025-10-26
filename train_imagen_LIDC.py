@@ -108,14 +108,13 @@ def train_one_unet(
     # Preprocessing the datasets.
     train_transforms = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize([0.5], [0.5])
     ])
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
+        # images = torch.stack([train_transforms(img) for img in reals], dim=0)  # [B,3,H,W]
         texts = t5.t5_encode_text(prompts, name="/data/hf_cache/t5-large")
-        return images, texts
+        return reals, texts
 
     train_dataloader = torch.utils.data.DataLoader(
         train_ds,
@@ -126,14 +125,13 @@ def train_one_unet(
 
     train_transforms_valid = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize([0.5], [0.5])
     ])
 
     def collate_fn_valid(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        images = torch.stack([train_transforms_valid(img) for img in reals], dim=0)  # [B,3,H,W]
+        # images = torch.stack([train_transforms_valid(img) for img in reals], dim=0)  # [B,3,H,W]
         texts = t5.t5_encode_text(prompts, name="/data/hf_cache/t5-large")
-        return images, texts
+        return reals, texts
 
     valid_dataloader = torch.utils.data.DataLoader(
         val_ds,
@@ -185,8 +183,8 @@ def train_one_unet(
 
 def train(args):
     unet_epochs = {
-        # 1: 3,
-        # 2: 3,
+        1: 3,
+        2: 3,
         3: 3
     }
     for unet_number, epoch in unet_epochs.items():
