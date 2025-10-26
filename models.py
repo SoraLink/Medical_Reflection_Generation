@@ -331,16 +331,8 @@ class ImagenModel:
             cond_drop_prob=0.1,
             timesteps=50
         ).cuda()
-        try:
-            print(f"Loading model from {model_path}")
-            self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
-        except Exception as e:
-            # 兜底：若没有打包的checkpoint，就用手动方式加载
-            print(e)
-            ckpt = torch.load(model_path, map_location=self.device)
-            imagen.load_state_dict(ckpt['model'] if isinstance(ckpt, dict) and 'model' in ckpt else ckpt)
-            self.imagen = imagen
-
+        print(f"Loading model from {model_path}")
+        self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
         self.imagen.eval()
 
     @torch.no_grad()
