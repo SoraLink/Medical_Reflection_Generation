@@ -7,7 +7,7 @@ import re
 import torch
 from PIL import Image
 
-OUTDIR = Path("mimic_cxr_image_text")
+OUTDIR = Path("LIDC_image_text")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
 def normalize_caption(s: str) -> str:
