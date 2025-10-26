@@ -61,7 +61,7 @@ train_ds = base.select(lambda s: split_by_hash(s[-1], 20) != 0)
 
 n_saved = 0
 for ex in train_ds:
-    real, gen, prompt, huatuo, key = zip(*ex)
+    real, gen, prompt, huatuo, key = ex
     img = real  # 已经是 PIL.Image.Image
     cap = normalize_caption(prompt)
     if not cap:
