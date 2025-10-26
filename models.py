@@ -332,6 +332,7 @@ class ImagenModel:
             timesteps=50
         ).cuda()
         try:
+            print(f"Loading model from {model_path}")
             self.imagen = load_imagen_from_checkpoint(model_path).to(self.device)
         except Exception:
             # 兜底：若没有打包的checkpoint，就用手动方式加载
