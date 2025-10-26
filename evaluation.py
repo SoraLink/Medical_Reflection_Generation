@@ -94,7 +94,7 @@ def get_LIDC_loader(args):
 
     def collate_fn(examples):
         reals, gens, prompts, huatuos, keys = zip(*examples)
-        pixel_values = [real.convert("RGB") for real in reals]
+        pixel_values = [real.convert("L") for real in reals]
 
         texts = []
         for p in prompts:
