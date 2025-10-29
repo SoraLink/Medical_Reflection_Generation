@@ -307,6 +307,7 @@ class ImagenModel:
 
         unet2 = Unet(
             dim=128,
+            cond_dim=512,
             dim_mults=(1, 2, 4, 8),
             num_resnet_blocks=(2, 4, 8, 8),
             layer_attns=(False, False, False, True),
@@ -316,6 +317,7 @@ class ImagenModel:
 
         unet3 = Unet(
             dim=128,
+            cond_dim=512,
             dim_mults=(1, 2, 4, 8),
             num_resnet_blocks=(2, 4, 8, 8),
             layer_attns=False,
