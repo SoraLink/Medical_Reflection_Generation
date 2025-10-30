@@ -392,7 +392,8 @@ class DALLEModel:
             if k.startswith('text_pos_emb.weights_'):
                 k = k.replace('weights_', 'weights.')
             fixed[k] = v
-        self.dalle.load_state_dict(weights)
+        self.dalle.load_state_dict(fixed, strict=True)
+        self.dalle.to(device)
         self.image_size = vae.image_size
 
     def __call__(self, prompts, num_inference_steps):
