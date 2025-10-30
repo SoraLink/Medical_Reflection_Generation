@@ -364,11 +364,34 @@ class DALLEModel:
 
     def __init__(self,  model_path, device):
         dalle_path = Path(model_path)
-        load_obj = torch.load(str(dalle_path))
-        dalle_params, vae_params, weights, vae_class_name, version = load_obj.pop('hparams'), load_obj.pop(
-            'vae_params'), load_obj.pop('weights'), load_obj.pop('vae_class_name', None), load_obj.pop('version', None)
-        vae = VQGanVAE()
-        self.dalle = DALLE(vae=vae, **dalle_params).cuda()
+        load_obj = torch.load(str(dalle_path), map_location="cpu")
+
+        # 2) 取出参数（有的 ckpt 字段可能没有，给默认）
+        dalle_params = load_obj.pop('hparams')
+        vae_params = load_obj.pop('vae_params', {})
+        weights = load_obj.pop('weights')
+        vae_class_name = load_obj.pop('vae_class_name', None)
+        version = load_obj.pop('version', None)
+
+        # 3) 用 ckpt 里的配置实例化 VAE（避免后续尺寸/码本不匹配）
+        vae = VQGanVAE(**vae_params) if isinstance(vae_params, dict) else VQGanVAE()
+
+        # 4) 先在 CPU 构建 DALLE，加载完权重再 to(device)
+        self.dalle = DALLE(vae=vae, **dalle_params)
+
+        # 5) 取出真正的 state_dict（有的包一层 'state_dict'）
+        sd = weights.get('state_dict', weights) if isinstance(weights, dict) else weights
+
+        # 6) 统一重命名：去掉 DDP 前缀、修正 image/text pos emb 的命名
+        fixed = {}
+        for k, v in sd.items():
+            if k.startswith('module.'):
+                k = k[len('module.'):]
+            if k.startswith('image_pos_emb.weights_'):
+                k = k.replace('weights_', 'weights.')
+            if k.startswith('text_pos_emb.weights_'):
+                k = k.replace('weights_', 'weights.')
+            fixed[k] = v
         self.dalle.load_state_dict(weights)
         self.image_size = vae.image_size
 
@@ -401,12 +424,3 @@ class DALLEModel:
             t = t.clamp(0, 1)
 
         return [to_pil_image(img) for img in t]
-
-dataset = load_dataset("itsanmolgupta/mimic-cxr-dataset", split='train')
-sample = random.choice(dataset)
-image = sample['image']
-prompt = sample['findings']
-diffusion = Diffusion('/data/sora/Medical_Reflection_Generation/checkpoints/MINIM/model', 'cuda')
-pred = diffusion([prompt], num_inference_steps=500)
-image.save("original.png")
-pred[0].save("pred.png")
