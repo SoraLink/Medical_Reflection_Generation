@@ -139,6 +139,9 @@ def main():
 
 
     accelerator = Accelerator()
+    if accelerator.is_main_process:
+        os.makedirs(args.output_dir, exist_ok=True)
+    accelerator.wait_for_everyone()
     device = accelerator.device
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -252,7 +255,14 @@ def main():
         }
 
     batch_size = 16
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0, collate_fn=collate_fn)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        num_workers=0,
+        collate_fn=collate_fn,
+        drop_last=True,  # ★ 关键：各 rank 步数一致
+        persistent_workers=False  # 避免 worker 残留影响同步
+    )
 
     global_samples = 14279
     world_size = accelerator.num_processes
@@ -404,6 +414,7 @@ def main():
                         save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
                         accelerator.save_state(save_path)
                         logger.info(f"Checkpoint saved to {save_path}")
+                    accelerator.wait_for_everyone()  # ← 保存后屏障
             logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
             progress_bar.set_postfix(**logs)
 
@@ -428,6 +439,7 @@ def main():
 
             )
             pipeline.save_pretrained(args.output_dir)
+        accelerator.wait_for_everyone()  # ← 保存后屏障
 
     accelerator.end_training()
 
