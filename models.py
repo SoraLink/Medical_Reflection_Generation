@@ -69,31 +69,42 @@ def build_model(modal, model_path, model, device):
         raise NotImplementedError
 
 class Reflection:
-    def __init__(self):
-        deffusion_path = './output'
+    def __init__(self, is_ct=True):
+        deffusion_path = './diffusion_LIDC'
         self.diffusion_pipe = StableDiffusionPipeline.from_pretrained(
             deffusion_path,
             torch_dtype=torch.float32,
             safety_checker=None, requires_safety_checker=False
         ).to("cuda:3")
-        reflection_path = './controlnet'
+        reflection_path = './controlnet_LIDC'
         self.reflection_pipe = StableDiffusionControlNetPipeline.from_pretrained(
             reflection_path,
             torch_dtype=torch.float32,
             safety_checker=None, requires_safety_checker=False
         ).to("cuda:1")
         self.huatuo = Huatuo()
-        verifier_path = './bt_verifier_qwenvl/best_merged_1.0000'
+        verifier_path = './bt_verifier_qwenvl_LIDC/best_merged_0.9900'
         self.verifier = QwenVLVerifier(verifier_path)
-        self.SYSTEM_PROMPT = (
-            "You are a medical imaging evaluation assistant. "
-            "You are given a generated chest X-ray image and its diagnostic description. "
-            "Your task is to analyze the generated image against the description and provide concise reflection: "
-            "what aspects should be improved to make the image 1) better match the diagnostic description, and "
-            "2) look more realistic as a chest X-ray. "
-            "Focus on anatomical accuracy, realism, and consistency. "
-            "Keep the answer concise, no longer than 100 words."
-        )
+        if not is_ct:
+            self.SYSTEM_PROMPT = (
+                "You are a medical imaging evaluation assistant. "
+                "You are given a generated chest X-ray image and its diagnostic description. "
+                "Your task is to analyze the generated image against the description and provide concise reflection: "
+                "what aspects should be improved to make the image 1) better match the diagnostic description, and "
+                "2) look more realistic as a chest X-ray. "
+                "Focus on anatomical accuracy, realism, and consistency. "
+                "Keep the answer concise, no longer than 100 words."
+            )
+        else:
+            self.SYSTEM_PROMPT = (
+                "You are a medical imaging evaluation assistant. "
+                "You are given a generated lung CT image and its diagnostic description. "
+                "Your task is to analyze the generated image against the description and provide concise reflection: "
+                "what aspects should be improved to make the image 1) better match the diagnostic description, and "
+                "2) look more realistic as a lung CT image. "
+                "Focus on anatomical accuracy, realism, and consistency. "
+                "Keep the answer concise, no longer than 100 words."
+            )
 
         self.USER_PROMPT = (
             "Diagnostic description:\n"
@@ -102,6 +113,7 @@ class Reflection:
             "Provide short and clear suggestions to improve the generated image so it better reflects the description "
             "and looks more realistic, in under 100 words."
         )
+
 
     def __call__(self, prompts, num_inference_steps, num_reflection_steps=20):
         # 1) 初次生成

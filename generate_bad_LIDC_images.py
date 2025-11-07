@@ -571,11 +571,11 @@ if __name__ == "__main__":
 
     REFLECTION_SYSTEM_PROMPT = (
         "You are a medical imaging evaluation assistant. "
-        "The left image is a real chest X-ray, the right image is generated from the diagnostic description. "
-        "Using the real X-ray as the ground truth, evaluate how well the generated image matches the description. "
+        "The left image is a real lung CT, the right image is generated from the diagnostic description. "
+        "Using the real CT as the ground truth, evaluate how well the generated image matches the description. "
         "Identify what aspects should be improved to: "
         "1) better match the diagnostic description, and "
-        "2) look more realistic as a chest X-ray. "
+        "2) look more realistic as a lung CT. "
         "Focus on anatomical accuracy, realism, and consistency. "
         "Keep the answer concise, no longer than 100 words."
     )
