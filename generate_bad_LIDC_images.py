@@ -658,7 +658,6 @@ if __name__ == "__main__":
                         uid += 1
                         continue
                     ct_description_prompt = (CT_DESCRIPTION_SYSTEM_PROMPT + "\n" + CT_DESCRIPTION_USER_PROMPT).format(bbox_coordinates=bbox_str)
-                    print(ct_description_prompt)
                     real_img01 = data["image_clean"].numpy().squeeze(0)  # [0,1], HxW
                     real_img8 = (real_img01 * 255).clip(0, 255).astype(np.uint8)
                     degraded_img01 = data["image_degraded"].numpy().squeeze(0)
@@ -671,6 +670,8 @@ if __name__ == "__main__":
                         diagnostic_description=diagnostic_description
                     )
                     reflection = huatuo_bot.inference(reflection_prompt, merged_pil)
+                    print(f"Description: {diagnostic_description}")
+                    print(f"Reflection: {reflection}")
                     sample = {
                         "__key__": key,  # 复用原key
                         "real.png": pil_to_png_bytes(real_img),  # 原样保存
