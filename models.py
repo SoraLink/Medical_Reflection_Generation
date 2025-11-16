@@ -83,7 +83,7 @@ class Reflection:
             safety_checker=None, requires_safety_checker=False
         ).to("cuda:1")
         self.huatuo = Huatuo()
-        verifier_path = './bt_verifier_qwenvl_LIDC/best_merged_0.9900'
+        verifier_path = './bt_verifier_qwenvl_LIDC/best_merged_1.0000'
         self.verifier = QwenVLVerifier(verifier_path)
         if not is_ct:
             self.SYSTEM_PROMPT = (
