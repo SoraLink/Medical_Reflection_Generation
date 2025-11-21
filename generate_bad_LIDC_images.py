@@ -568,6 +568,8 @@ if __name__ == "__main__":
                     help="启用断点续跑：跳过进度文件中已完成的 key")
     ap.add_argument("--state_file", default="/data/LIDC/augmented/ds_ct.state.jsonl",
                     help="进度文件路径（默认：<output_stem>.state.jsonl）")
+    ap.add_argument("--model_path", type=str, required=True)
+
     args = ap.parse_args()
 
     REFLECTION_SYSTEM_PROMPT = (
@@ -622,7 +624,7 @@ if __name__ == "__main__":
     )
     done_keys = load_done_keys(state_path) if args.resume else set()
     scans = pl.query(pl.Scan).all()
-    model = Diffusion(args.model_path, args.device)
+    model = Diffusion(args.model_path, "cuda:1")
 
     with ShardWriter(args.output, maxcount=args.shard_maxcount) as sink:
         for scan in tqdm(scans):
