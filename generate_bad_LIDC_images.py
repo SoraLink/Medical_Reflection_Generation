@@ -29,6 +29,8 @@ import requests
 
 import matplotlib.pyplot as plt
 
+from models import Diffusion
+
 try:
     import SimpleITK as sitk
 except Exception:
@@ -496,20 +498,20 @@ class LIDCSlicePairDataset(Dataset):
 
         if self.out_size is not None:
             clean01, mask, hu = self._resize_pair(clean01, mask, hu, self.out_size,)
-
-        degraded01, mask_out, params = make_degraded(
-            img01=clean01,
-            mask01=mask,
-            hu_img=hu,  # 提供 HU 以便随机窗宽窗位
-            change_mask_size=self.change_mask_size
-        )
-        mask_out = mask if mask_out is None else mask_out
+        #
+        # degraded01, mask_out, params = make_degraded(
+        #     img01=clean01,
+        #     mask01=mask,
+        #     hu_img=hu,  # 提供 HU 以便随机窗宽窗位
+        #     change_mask_size=self.change_mask_size
+        # )
+        # mask_out = mask if mask_out is None else mask_out
 
         sample = {
             "image_clean": torch.from_numpy(clean01).unsqueeze(0).float(),    # (1,H,W)
-            "image_degraded": torch.from_numpy(degraded01).unsqueeze(0).float(),
-            "mask": torch.from_numpy(mask_out.astype(np.float32)).unsqueeze(0),  # (1,H,W)
-            "params": params
+            # "image_degraded": torch.from_numpy(degraded01).unsqueeze(0).float(),
+            # "mask": torch.from_numpy(mask_out.astype(np.float32)).unsqueeze(0),  # (1,H,W)
+            # "params": params
         }
         return sample
 
@@ -618,6 +620,8 @@ if __name__ == "__main__":
     )
     done_keys = load_done_keys(state_path) if args.resume else set()
     scans = pl.query(pl.Scan).all()
+    model = Diffusion(args.model_path, args.device)
+
     with ShardWriter(args.output, maxcount=args.shard_maxcount) as sink:
         for scan in tqdm(scans):
             vol = scan.to_volume().astype(np.float32)  # (D,H,W) HU
@@ -659,11 +663,11 @@ if __name__ == "__main__":
                     ct_description_prompt = (CT_DESCRIPTION_SYSTEM_PROMPT + "\n" + CT_DESCRIPTION_USER_PROMPT).format(bbox_coordinates=bbox_str)
                     real_img01 = data["image_clean"].numpy().squeeze(0)  # [0,1], HxW
                     real_img8 = (real_img01 * 255).clip(0, 255).astype(np.uint8)
-                    degraded_img01 = data["image_degraded"].numpy().squeeze(0)
-                    degraded_img8 = (degraded_img01 * 255).clip(0, 255).astype(np.uint8)
+                    # degraded_img01 = data["image_degraded"].numpy().squeeze(0)
+                    # degraded_img8 = (degraded_img01 * 255).clip(0, 255).astype(np.uint8)
                     diagnostic_description = huatuo_bot.inference(ct_description_prompt, Image.fromarray(real_img8))
                     real_img = Image.fromarray(real_img8)
-                    degraded_img = Image.fromarray(degraded_img8)
+                    degraded_img = model(prompts=[diagnostic_description], num_inference_steps=50)[0]
                     merged_pil = make_side_by_side(real_img, degraded_img)
                     reflection_prompt = (REFLECTION_SYSTEM_PROMPT + "\n" + REFLECTION_USER_PROMPT).format(
                         diagnostic_description=diagnostic_description
