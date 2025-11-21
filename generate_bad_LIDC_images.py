@@ -495,7 +495,7 @@ class LIDCSlicePairDataset(Dataset):
 
         # 清晰图（标准窗宽窗位）
         clean01 = apply_window(hu, w=self.window_w, l=self.window_l)
-
+        #
         if self.out_size is not None:
             clean01, mask, hu = self._resize_pair(clean01, mask, hu, self.out_size,)
         #
@@ -610,6 +610,8 @@ if __name__ == "__main__":
     )
 
     uid = 0
+    save_dir = Path("/data/LIDC/merged_jpgs")
+    save_dir.mkdir(parents=True, exist_ok=True)
 
     huatuo_bot = Huatuo()
     out_path = Path(args.output)
@@ -669,6 +671,8 @@ if __name__ == "__main__":
                     real_img = Image.fromarray(real_img8)
                     degraded_img = model(prompts=[diagnostic_description], num_inference_steps=50)[0]
                     merged_pil = make_side_by_side(real_img, degraded_img)
+                    merged_path = save_dir / f"{key}.jpg"
+                    merged_pil.save(merged_path, quality=95)
                     reflection_prompt = (REFLECTION_SYSTEM_PROMPT + "\n" + REFLECTION_USER_PROMPT).format(
                         diagnostic_description=diagnostic_description
                     )
