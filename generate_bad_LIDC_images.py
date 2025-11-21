@@ -29,7 +29,7 @@ import requests
 
 import matplotlib.pyplot as plt
 
-from models import Diffusion
+from diffusers import StableDiffusionPipeline
 
 try:
     import SimpleITK as sitk
@@ -545,6 +545,21 @@ def series_to_slices(
     hu_slices = [vol_hu[i] for i in range(D)]
     mask_slices = [mask3d[i] for i in range(D)]
     return hu_slices, mask_slices
+
+class Diffusion:
+
+    def __init__(self,  model_path, device):
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            model_path,
+            torch_dtype=torch.float32
+        ).to(device)
+
+    def __call__(self, prompts, num_inference_steps):
+        images = self.pipe(
+            prompt=prompts,
+            num_inference_steps=num_inference_steps
+        ).images
+        return images
 
 
 # -----------------------------
